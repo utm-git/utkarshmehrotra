@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utkarsh Mehrotra | Chief Software Engineer</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Utkarsh Mehrotra - Chief Software Engineer specializing in real-time systems, backend architecture, and distributed platforms.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-base: #0a0f16;
+            --bg-surface: #111827;
+            --bg-elevated: #1f2937;
+            
+            --neon-accent: #00ff66;
+            --neon-accent-dim: rgba(0, 255, 102, 0.15);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            
+            --border-muted: #1e293b;
+            --border-highlight: #334155;
+            
+            /* Typography */
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            /* Sizing & Transitions */
+            --container-width: 1100px;
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Essential Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            /* Grid Background */
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        ::selection {
+            background: var(--neon-accent);
+            color: var(--bg-base);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--neon-accent);
+            border-radius: 2px;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        a {
+            color: var(--neon-accent);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+        
+        a:hover {
+            text-shadow: 0 0 10px var(--neon-accent-dim);
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Status Banner */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-size: 0.85rem;
+            color: #10b981;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, var(--neon-accent-dim) 0%, transparent 60%);
+            z-index: -1;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+        }
+
+        .hero-title {
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Typing Animation */
+        .typewriter-container {
+            font-size: 1.2rem;
+            color: var(--neon-accent);
+            height: 2rem;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .typewriter-text {
+            border-right: 2px solid var(--neon-accent);
+            padding-right: 4px;
+            animation: blink-cursor 0.75s step-end infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes blink-cursor {
+            from, to { border-color: transparent }
+            50% { border-color: var(--neon-accent) }
+        }
+
+        /* Buttons CTA */
+        .actions {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.8rem;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .btn.primary {
+            background-color: transparent;
+            color: var(--neon-accent);
+            border: 1px solid var(--neon-accent);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.1);
+        }
+
+        .btn.primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--neon-accent);
+            z-index: -1;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn.primary:hover {
+            color: var(--bg-base);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+            text-shadow: none;
+        }
+
+        .btn.primary:hover::before {
+            transform: scaleX(1);
+        }
+
+        .btn.secondary {
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-muted);
+        }
+
+        .btn.secondary:hover {
+            background-color: var(--bg-elevated);
+            border-color: var(--border-highlight);
+            color: var(--neon-accent);
+        }
+
+        /* Section Spacing */
+        section {
+            padding: 6rem 0;
+        }
+
+        /* Scroll Reveal Utility */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* About Section */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .metric-card {
+            background: rgba(17, 24, 39, 0.5);
+            border: 1px solid var(--border-muted);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: var(--transition-smooth);
+        }
+
+        .metric-card:hover {
+            border-color: var(--neon-accent);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px var(--neon-accent-dim);
+        }
+
+        .metric-num {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--neon-accent);
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Experience Timeline */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: var(--border-muted);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 3.5rem;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 15px;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            background: var(--bg-base);
+            border: 2px solid var(--neon-accent);
+            border-radius: 50%;
+            z-index: 2;
+            transition: var(--transition-smooth);
+        }
+
+        .timeline-item:hover .timeline-dot {
+            background: var(--neon-accent);
+            box-shadow: 0 0 10px var(--neon-accent);
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            color: var(--neon-accent);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .timeline-role {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .timeline-company {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .timeline-content ul {
+            list-style-type: none;
+        }
+
+        .timeline-content li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .timeline-content li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: var(--neon-accent);
+            font-weight: bold;
+        }
+
+        /* Projects Section */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .project-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-muted);
+            border-radius: 8px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-accent), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-highlight);
+            box-shadow: 0 20px 40px -20px rgba(0,0,0,0.5);
+        }
+
+        .project-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .project-icon {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .project-title {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .project-title a {
+            color: var(--text-primary);
+        }
+
+        .project-title a::after {
+            content: '';
+            position: absolute;
+            inset: 0; /* Makes whole card clickable */
+        }
+        
+        .project-desc {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .project-tech {
+            display: flex;
+            gap: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--neon-accent);
+        }
+
+        /* Skills Section */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .skill-tag {
+            background: rgba(31, 41, 55, 0.4);
+            border: 1px solid var(--border-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: var(--transition-smooth);
+            cursor: default;
+        }
+
+        .skill-tag:hover {
+            border-color: var(--neon-accent);
+            color: var(--neon-accent);
+            background: rgba(0, 255, 102, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        /* Two Column Layout blocks */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        @media (min-width: 768px) {
+            .two-col {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .list-block h3 {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--neon-accent);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .list-block ul {
+            list-style: none;
+        }
+
+        .list-block li {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-muted);
+        }
+        
+        .list-block li:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .list-block strong {
+            display: block;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-muted);
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .social-links a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .social-links a:hover {
+            color: var(--neon-accent);
+        }
+
+        .copyright {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Utility specific for mobile */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 3rem;
+            }
+            .timeline::before {
+                left: 0;
+            }
+            .timeline-dot {
+                left: -5px;
+            }
+            .timeline-item {
+                padding-left: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero reveal">
+            <div>
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    Current Status: 🌴 On vacation
+                </div>
+                
+                <h1 class="hero-title">Utkarsh Mehrotra</h1>
+                <div class="hero-subtitle">Chief Software Engineer @ Samsung Electronics</div>
+                
+                <div class="typewriter-container">
+                    <span class="typewriter-text" id="typewriter"></span>
+                </div>
+                
+                <div class="actions">
+                    <a href="#about" class="btn primary">View Resume</a> <!-- Normally links to a PDF -->
+                    <a href="https://github.com/utm-git" target="_blank" rel="noopener noreferrer" class="btn secondary">GitHub</a>
+                    <a href="https://www.linkedin.com/in/utkarshmehrotra-/" target="_blank" rel="noopener noreferrer" class="btn secondary">LinkedIn</a>
+                    <a href="mailto:h20180038g@alumni.bits-pilani.ac.in" class="btn secondary">Contact</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="reveal">
+            <h2>System Architecture.<br>Scale. Correctness.</h2>
+            <p style="max-width: 800px; font-size: 1.1rem;">
+                I am an experienced software engineer specializing in real-time systems, backend architecture, and distributed platforms. Currently leading the design and implementation of scalable solutions for Samsung Finance+, a robust lending platform serving multiple geographies concurrently. 
+            </p>
+            <p style="max-width: 800px;">
+                Previously, I architected high-volume fraud detection pipelines at Western Union capable of sub-second parallel processing, and drove monolith-to-microservices modernization initiatives at Cisco Systems.
+            </p>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-num">10M+</div>
+                    <div class="metric-label">Events Processed/Day</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">$150K</div>
+                    <div class="metric-label">Annual Infra Savings</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">50%</div>
+                    <div class="metric-label">MTTR Reduction</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-num">&lt;1s</div>
+                    <div class="metric-label">Real-time Alert Latency</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experience Section -->
+        <section id="experience" class="reveal">
+            <h2>Experience</h2>
+            
+            <div class="timeline">
+                
+                <div class="timeline-item reveal">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">June 2025 – Present · Bengaluru</span>
+                    <h3 class="timeline-role">Chief Engineer</h3>
+                    <div class="timeline-company">Samsung Electronics</div>
+                    <div class="timeline-content">
+                        <ul>
+                            <li>Driving development of repayment and payment reconciliation modules for Samsung Finance+ across multiple geographies.</li>
+                            <li>Designed strategies to reduce delinquency rates and eliminate manual reconciliation efforts.</li>
+                            <li>Ensuring seamless, high-availability customer financing experience across Thailand, Indonesia, Philippines, and India.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">Jan 2025 – June 2025 · Pune</span>
+                    <h3 class="timeline-role">Lead Software Engineer</h3>
+                    <div class="timeline-company">Western Union</div>
+                    <div class="timeline-content">
+                        <ul>
+                            <li>Architected real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) enabling parallel sub-second processing of transactional, behavioral, and auth events.</li>
+                            <li>Designed configurable rule-execution pipelines for contextual risk scoring to adapt to evolving risk profiles.</li>
+                            <li>Engineered ML service integration for real-time risk signal consumption, bridging operations and data science.</li>
+                            <li>Scaled systems to 10M+ events/day, reinforced with structured logging, real-time metrics, and automated alerting.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">Sept 2023 – Dec 2024 · Bengaluru</span>
+                    <h3 class="timeline-role">Software Engineer 3</h3>
+                    <div class="timeline-company">Cisco</div>
+                    <div class="timeline-content">
+                        <ul>
+                            <li>Led platform services for customer/product hierarchy mapping, successfully enabling entitlement-based pricing across diverse geographic locations.</li>
+                            <li>Constructed real-time shipment & invoicing tracking workflows with graph-based order movement visibility.</li>
+                            <li>Directed critical monolith-to-microservices migration strategies utilizing Spring Boot and AWS ECS.</li>
+                            <li>Led a seamless Neo4j → Amazon Neptune (Gremlin) migration, yielding approximately $150K/year in infrastructure cost reductions.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="timeline-item reveal">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">July 2020 – Aug 2023 · Bengaluru</span>
+                    <h3 class="timeline-role">Software Engineer 2</h3>
+                    <div class="timeline-company">Cisco</div>
+                    <div class="timeline-content">
+                        <ul>
+                            <li>Engineered Spring Boot backends for Cisco's Partner & Product Master Platform handling entitlement resolution and complex discount mappings.</li>
+                            <li>Developed a metadata-driven onboarding engine, radically eliminating source code changes for integrating new partner hierarchies.</li>
+                            <li>Deployed an RBAC framework aligned strictly with enterprise security standards across 300+ internal engineering teams.</li>
+                            <li>Implemented Kafka-based real-time alerting with &lt;1s latency for rapid data anomaly detection, supported by an ELK + Prometheus + Grafana observability stack.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="reveal">
+            <h2>Pinned Repositories</h2>
+            <p>Select architectural implementations and system design explorations.</p>
+            
+            <div class="projects-grid">
+                
+                <div class="project-card reveal">
+                    <div class="project-icon">🏛️</div>
+                    <h3 class="project-title"><a href="https://github.com/utm-git/financially-correct-systems" target="_blank">financially-correct-systems</a></h3>
+                    <p class="project-desc">Explorations and robust architectures ensuring absolute financial correctness, idempotency, and data reliability in digital ledgers.</p>
+                    <div class="project-tech">
+                        <span>Java</span>
+                        <span>Design Patterns</span>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-icon">📡</div>
+                    <h3 class="project-title"><a href="https://github.com/utm-git/operational-maturity-signals" target="_blank">operational-maturity-signals</a></h3>
+                    <p class="project-desc">Implementations demonstrating deep observability, resilient telemetry, and operational maturity patterns for distributed systems.</p>
+                    <div class="project-tech">
+                        <span>Java</span>
+                        <span>Observability</span>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-icon">💸</div>
+                    <h3 class="project-title"><a href="https://github.com/utm-git/payment-orchestration-system" target="_blank">payment-orchestration-system</a></h3>
+                    <p class="project-desc">A complex payment orchestration architecture to route, settle, and reconcile transactional flows deterministically.</p>
+                    <div class="project-tech">
+                        <span>Java</span>
+                        <span>Microservices</span>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-icon">⚙️</div>
+                    <h3 class="project-title"><a href="https://github.com/utm-git/low-level-system-designs" target="_blank">low-level-system-designs</a></h3>
+                    <p class="project-desc">A comprehensive collection of heavily object-oriented low-level software design (LLD) implementations and exercises.</p>
+                    <div class="project-tech">
+                        <span>Java</span>
+                        <span>OOP</span>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div style="margin-top: 2rem; text-align: right;">
+                <a href="https://github.com/utm-git" target="_blank" class="timeline-date" style="font-size: 1rem;">View all 12 repositories →</a>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="skills" class="reveal">
+            <h2>Capabilities Stack</h2>
+            
+            <div class="skills-container">
+                <div class="skill-tag">Java</div>
+                <div class="skill-tag">SQL</div>
+                <div class="skill-tag">Apache Kafka</div>
+                <div class="skill-tag">Apache Flink</div>
+                <div class="skill-tag">Spark Streaming</div>
+                <div class="skill-tag">Spring Boot</div>
+                <div class="skill-tag">Microservices</div>
+                <div class="skill-tag">MongoDB</div>
+                <div class="skill-tag">Neo4j</div>
+                <div class="skill-tag">Amazon Neptune (Gremlin)</div>
+                <div class="skill-tag">AWS ECS</div>
+                <div class="skill-tag">Docker</div>
+                <div class="skill-tag">Jenkins CI/CD</div>
+                <div class="skill-tag">ELK Stack</div>
+                <div class="skill-tag">Prometheus / Grafana</div>
+                <div class="skill-tag">System Architecture</div>
+                <div class="skill-tag">Graph Databases</div>
+            </div>
+        </section>
+
+        <!-- Education & Misc Section -->
+        <section class="reveal">
+            <div class="two-col">
+                <div class="list-block">
+                    <h3>Education</h3>
+                    <ul>
+                        <li>
+                            <strong>MEng, Computer Science</strong>
+                            BITS Pilani (2018–2020)
+                        </li>
+                        <li>
+                            <strong>BTech, Computer Science</strong>
+                            Dr. APJ Abdul Kalam Technical University (2013–2017)
+                        </li>
+                        <li>
+                            <strong>ISC, PCMC</strong>
+                            City Montessori School
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="list-block">
+                    <h3>Certifications & Training</h3>
+                    <ul>
+                        <li>
+                            <strong>EF SET CEFR C2 Proficient</strong>
+                            English Language Proficiency
+                        </li>
+                        <li>
+                            <strong>Applied Machine Learning Summer School</strong>
+                        </li>
+                        <li>
+                            <strong>Machine Learning & Advanced NLP</strong>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="list-block">
+                    <h3>Academic & Teaching</h3>
+                    <ul>
+                        <li>
+                            <strong>Graduate Teaching Assistant (1.5 Yrs)</strong>
+                            BITS Pilani Goa
+                        </li>
+                        <li>
+                            <span style="color: var(--text-secondary); font-size: 0.9rem;">Course:</span> Information Retrieval (50+ students)<br>
+                            <span style="color: var(--text-secondary); font-size: 0.9rem;">Course:</span> Data Structures & Algorithms (200+ students)
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="list-block">
+                    <h3>Languages</h3>
+                    <ul>
+                        <li>
+                            <strong>English</strong>
+                            Native/Bilingual — C2 Proficient
+                        </li>
+                        <li>
+                            <strong>Hindi</strong>
+                            Native
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-logo">U.M.</div>
+            <div class="social-links">
+                <a href="https://github.com/utm-git" target="_blank">GitHub</a>
+                <a href="https://www.linkedin.com/in/utkarshmehrotra-/" target="_blank">LinkedIn</a>
+                <a href="mailto:h20180038g@alumni.bits-pilani.ac.in">Email</a>
+            </div>
+            <div class="copyright">
+                &copy; <span id="year"></span> Utkarsh Mehrotra. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Set current year
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // 1. Scroll Reveal Logic using Intersection Observer API
+        const revealElements = document.querySelectorAll('.reveal');
+        
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // Reveal only once
+                }
+            });
+        }, {
+            root: null,
+            threshold: 0.1, // Trigger when 10% visible
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // 2. Typing effect Logic
+        const textArray = [
+            "10M+ events/day processed.", 
+            "Real-time systems expert.", 
+            "Distributed platforms.", 
+            "Backend architecture."
+        ];
+        
+        let typingDelay = 100;
+        let erasingDelay = 50;
+        let newTextDelay = 2000;
+        let textArrayIndex = 0;
+        let charIndex = 0;
+        const typewriterElement = document.getElementById("typewriter");
+
+        function type() {
+            if (charIndex < textArray[textArrayIndex].length) {
+                typewriterElement.textContent += textArray[textArrayIndex].charAt(charIndex);
+                charIndex++;
+                setTimeout(type, typingDelay);
+            } else {
+                setTimeout(erase, newTextDelay);
+            }
+        }
+
+        function erase() {
+            if (charIndex > 0) {
+                typewriterElement.textContent = textArray[textArrayIndex].substring(0, charIndex - 1);
+                charIndex--;
+                setTimeout(erase, erasingDelay);
+            } else {
+                textArrayIndex++;
+                if (textArrayIndex >= textArray.length) textArrayIndex = 0;
+                setTimeout(type, typingDelay + 1100);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initiate typing effect 1 second after load
+            if(textArray.length) setTimeout(type, 1000);
+            
+            // Trigger immediately visible reveal elements
+            setTimeout(() => {
+                revealElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if(rect.top < window.innerHeight) {
+                        el.classList.add('active');
+                    }
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
