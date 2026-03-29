@@ -339,6 +339,107 @@
             letter-spacing: 0.05em;
         }
 
+        /* Writing Section Specifics */
+        .writing-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        @media (min-width: 768px) {
+            .writing-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .writing-card {
+            border: 1px solid var(--border-light);
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition-soft);
+            background: transparent;
+        }
+
+        .writing-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .writing-card-head h3 {
+            font-size: 1.4rem;
+            font-style: italic;
+            margin-bottom: 1.2rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .writing-card-tags {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .wtag {
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.6rem;
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+
+        .wtag-sys, .wtag-scale {
+            color: var(--accent-sage);
+            border-color: rgba(141, 163, 153, 0.3);
+        }
+
+        .writing-card p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            flex-grow: 1;
+            margin-bottom: 2.5rem;
+        }
+
+        .writing-card-footer {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .writing-card-footer a {
+            transition: var(--transition-soft);
+        }
+
+        .read-link {
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.2rem;
+            text-transform: lowercase;
+            letter-spacing: 0.05em;
+        }
+
+        .read-link:hover {
+            color: var(--accent-sage);
+            border-color: var(--accent-sage);
+        }
+
+        .pdf-link {
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+        }
+
+        .pdf-link:hover {
+            color: var(--text-primary);
+        }
+
         /* Skills Section */
         .skills-container {
             display: flex;
@@ -610,25 +711,39 @@
             </div>
         </section>
 
-        <!-- Publications Section -->
-        <section id="publications" class="reveal">
-            <h2>Publications & Articles</h2>
+        <!-- Writing Section -->
+        <section id="writing" class="reveal">
+            <h2>Writing</h2>
             
-            <div class="projects-grid">
+            <div class="writing-grid">
                 
-                <div class="project-card reveal">
-                    <h3 class="project-title"><a href="assets/blogs/wu-pipeline-utkarsh.pdf" target="_blank">Real-Time Fraud Detection Pipeline</a></h3>
-                    <p class="project-desc">An architectural deep-dive into the 10M+ events/day sub-second fraud detection pipeline built at Western Union.</p>
-                    <div class="project-tech">
-                        <span>PDF Document</span>
+                <div class="writing-card reveal">
+                    <div class="writing-card-head">
+                        <h3>I Built a 10M Events/Day Fraud Detection Pipeline. Here's What I Learned.</h3>
+                        <div class="writing-card-tags">
+                            <span class="wtag wtag-sys">Streaming</span>
+                            <span class="wtag wtag-sys">Kafka · Flink</span>
+                        </div>
+                    </div>
+                    <p>Six months at Western Union redesigning fraud detection from batch to streaming — the architecture, the hard tradeoffs around exactly-once semantics, and three things I'd do differently if I started today.</p>
+                    <div class="writing-card-footer">
+                        <a class="read-link" href="assets/blogs/wu-pipeline-utkarsh.pdf" target="_blank">Read article &rarr;</a>
+                        <a class="pdf-link" href="assets/blogs/wu-pipeline-utkarsh.pdf" download="Western_Union_Fraud_Detection_Pipeline_Utkarsh.pdf">&darr; PDF</a>
                     </div>
                 </div>
 
-                <div class="project-card reveal">
-                    <h3 class="project-title"><a href="assets/blogs/jpmc-scale-utkarsh.pdf" target="_blank">Architectures at Scale</a></h3>
-                    <p class="project-desc">System design patterns and tradeoffs for processing massive-scale transactional data effectively.</p>
-                    <div class="project-tech">
-                        <span>PDF Document</span>
+                <div class="writing-card reveal">
+                    <div class="writing-card-head">
+                        <h3>I Know What Would Break at JPMC / PayPal Scale. Here's the Redesign.</h3>
+                        <div class="writing-card-tags">
+                            <span class="wtag wtag-scale">Scale</span>
+                            <span class="wtag wtag-scale">50K+ req/s</span>
+                        </div>
+                    </div>
+                    <p>My Western Union pipeline handles 115 events/second reliably. Here's exactly what fails at 1,500/s and 50,000/s — tiered state, feature stores, graph engines, per-stage latency budgets — and how I'd rebuild each layer.</p>
+                    <div class="writing-card-footer">
+                        <a class="read-link" href="assets/blogs/jpmc-scale-utkarsh.pdf" target="_blank">Read article &rarr;</a>
+                        <a class="pdf-link" href="assets/blogs/jpmc-scale-utkarsh.pdf" download="JPMC_PayPal_Scale_Utkarsh.pdf">&darr; PDF</a>
                     </div>
                 </div>
 
