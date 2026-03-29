@@ -5,7 +5,6 @@ A sleek, static, single-file personal portfolio landing page for [Utkarsh Mehrot
 ## 🌍 Live Website
 
 View the live portfolio at: **[https://utm-git.github.io/utkarshmehrotra/](https://utm-git.github.io/utkarshmehrotra/)**
-*(Note: If you haven't renamed your repository yet, the URL might be slightly different).*
 
 ## 🛠️ Tech Stack & Architecture
 
