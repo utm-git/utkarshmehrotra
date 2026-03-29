@@ -1,313 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Building a Lending Platform Across Four Markets: Correctness at Scale</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building a Lending Platform Across Four Markets: Correctness at Scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #111; --ink2: #333; --ink3: #666; --ink4: #999;
+    --bg: #fff; --bg2: #f7f8fa; --bg3: #f0f1f3;
+    --border: #e4e5e7;
+    --accent: #0055d4;
+    --accent2: #d47000;
+    --danger: #c00;
+    --mono-bg: #0f1117; --mono-fg: #c9d1d9;
+    --mono-comment: #6a9f6a; --mono-key: #f9c784; --mono-str: #9ecbff;
+  }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink); background: var(--bg);
+    line-height: 1.75; -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 0 32px 80px; }
 
-    :root {
-      --bg: #0f0f0f;
-      --surface: #161616;
-      --border: #222;
-      --text: #e8e8e8;
-      --muted: #888;
-      --accent: #c8f04a;
-      --accent-dim: rgba(200, 240, 74, 0.08);
-      --code-bg: #1a1a1a;
-      --tag-bg: #1e1e1e;
-      --mono: 'JetBrains Mono', monospace;
-      --sans: 'Inter', sans-serif;
-    }
+  .site-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0; border-bottom: 1px solid var(--border);
+  }
+  .site-header a { font-size: 0.8rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+  .site-header a:hover { color: var(--ink); }
+  .header-sep { color: var(--border); }
 
-    html { scroll-behavior: smooth; }
+  .article-header { padding: 52px 0 40px; border-bottom: 1px solid var(--border); }
+  .category-label {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 700;
+    letter-spacing: -0.025em; line-height: 1.2;
+    color: var(--ink); margin-bottom: 18px;
+  }
+  .subtitle {
+    font-size: 1.05rem; color: var(--ink3); line-height: 1.65;
+    margin-bottom: 28px; max-width: 680px;
+  }
+  .byline { display: flex; align-items: center; gap: 16px; font-size: 0.83rem; color: var(--ink4); }
+  .byline-author { font-weight: 600; color: var(--ink2); }
+  .byline-dot { color: var(--border); }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 16px;
-      line-height: 1.75;
-      -webkit-font-smoothing: antialiased;
-    }
+  /* Scale grid / Stats grid */
+  .scale-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; border: 1px solid var(--border); border-radius: 8px;
+    margin: 40px 0 48px; overflow: hidden;
+  }
+  .scale-col { padding: 20px 22px; border-right: 1px solid var(--border); background: var(--bg2); }
+  .scale-col:last-child { border-right: none; }
+  .scale-col-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink4); margin-bottom: 10px;
+  }
+  .scale-num { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; color: var(--accent); }
+  .scale-detail { font-size: 0.75rem; color: var(--ink4); line-height: 1.6; }
 
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(15,15,15,0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 40px;
-      display: flex; align-items: center; gap: 8px;
-      font-size: 13px; color: var(--muted);
-    }
-    nav a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    nav a:hover { color: var(--text); }
-    nav .sep { opacity: 0.3; }
+  article { padding-top: 8px; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--ink); margin: 52px 0 14px;
+  }
+  h3 {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink3); margin: 36px 0 10px;
+  }
+  p { font-size: 0.97rem; color: var(--ink2); margin-bottom: 1.1rem; line-height: 1.78; }
+  strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+    background: var(--bg3); padding: 2px 6px; border-radius: 4px; color: #c7254e;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
-    .hero {
-      max-width: 780px; margin: 0 auto;
-      padding: 80px 40px 56px;
-      border-bottom: 1px solid var(--border);
-    }
+  .callout {
+    background: var(--bg2); border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0; padding: 18px 22px; margin: 32px 0;
+  }
+  .callout p { font-size: 0.97rem; color: var(--ink2); margin: 0; line-height: 1.65; font-style: italic; }
 
-    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
-    .tag {
-      font-size: 11px; font-family: var(--mono); color: var(--muted);
-      background: var(--tag-bg); border: 1px solid var(--border);
-      padding: 3px 10px; border-radius: 3px;
-      letter-spacing: 0.04em; text-transform: uppercase;
-    }
-    .tag.accent {
-      color: var(--accent);
-      border-color: rgba(200,240,74,0.25);
-      background: var(--accent-dim);
-    }
+  .feature-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 16px 20px; font-size: 0.93rem; color: var(--ink2); margin-bottom: 12px;
+  }
+  .feature-box-title {
+    color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  }
 
-    h1 {
-      font-size: clamp(26px, 4vw, 38px); font-weight: 600;
-      line-height: 1.2; letter-spacing: -0.02em;
-      margin-bottom: 20px; color: #fff;
-    }
+  .code-block {
+    background: var(--mono-bg); border-radius: 8px;
+    padding: 20px 24px; margin: 24px 0; overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    line-height: 1.8; color: var(--mono-fg); margin: 0; white-space: pre;
+  }
+  .code-block .cm { color: var(--mono-comment); }
+  .code-block .kw { color: var(--mono-key); }
+  .code-block .st { color: var(--mono-str); }
+  .code-block .fn { color: #79c0ff; }
+  .code-block .type { color: #f9c784; }
 
-    .subtitle {
-      font-size: 17px; color: var(--muted);
-      line-height: 1.6; margin-bottom: 36px; max-width: 640px;
-    }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0 32px; font-size: 0.87rem; }
+  th {
+    text-align: left; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink4);
+    padding: 8px 14px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 11px 14px; border-bottom: 1px solid var(--border);
+    color: var(--ink2); vertical-align: top; line-height: 1.55;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 600; color: var(--ink); }
 
-    .byline {
-      font-size: 13px; color: var(--muted);
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-    }
-    .byline strong { color: var(--text); }
-    .byline .dot { opacity: 0.3; }
+  .lessons { display: flex; flex-direction: column; gap: 20px; margin: 24px 0; }
+  .lesson {
+    display: flex; gap: 20px; align-items: flex-start;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 20px 24px;
+  }
+  .lesson-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);
+    background: #e8f0fe; border: 1px solid rgba(0,85,212,0.2);
+    width: 32px; height: 32px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-weight: 600;
+  }
+  .lesson-body { flex: 1; }
+  .lesson-title { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .lesson-body p { font-size: 0.9rem; color: var(--ink2); margin: 0; }
 
-    .stats {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 1px; background: var(--border);
-      border: 1px solid var(--border); border-radius: 6px;
-      overflow: hidden; margin: 48px auto; max-width: 780px;
-    }
-    .stat {
-      background: var(--surface); padding: 24px 28px;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .stat-value {
-      font-size: 26px; font-weight: 600; color: var(--accent);
-      font-family: var(--mono); letter-spacing: -0.02em;
-    }
-    .stat-label {
-      font-size: 11px; color: var(--muted);
-      line-height: 1.4; text-transform: uppercase; letter-spacing: 0.05em;
-    }
+  .arch {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 36px 32px; margin: 28px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; overflow-x: auto;
+  }
+  .arch-row { display: flex; align-items: flex-start; gap: 0; margin: 8px 0; }
+  .arch-label {
+    color: var(--ink4); font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 0.1em; width: 120px; flex-shrink: 0; padding-top: 6px; font-weight: 600;
+  }
+  .arch-boxes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .arch-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 5px 12px;
+    color: var(--ink2); font-size: 0.7rem; white-space: nowrap;
+  }
+  .arch-box.hi { border-color: rgba(0,85,212,0.3); color: var(--accent); font-weight: 500;}
+  .arch-box.warn { border-color: rgba(212,112,0,0.3); color: var(--accent2); font-weight: 500;}
+  .arch-arrow { color: var(--ink3); font-size: 1rem; padding: 0 4px; }
+  .arch-caption {
+    font-size: 0.75rem; color: var(--ink4);
+    text-align: center; margin-top: 20px;
+    font-family: 'Inter', sans-serif; font-style: italic;
+  }
+  .arch-divider { border-top: 1px dashed var(--border); margin: 14px 0; }
 
-    .content { max-width: 780px; margin: 0 auto; padding: 0 40px 100px; }
+  /* Latency budget bar */
+  .latency-budget {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px 32px; margin: 28px 0;
+  }
+  .lb-title {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--ink3); margin-bottom: 20px; font-weight: 600;
+  }
+  .lb-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .lb-stage { font-size: 0.8rem; color: var(--ink2); width: 200px; flex-shrink: 0; }
+  .lb-bar-wrap { flex: 1; background: var(--border); border-radius: 2px; height: 6px; }
+  .lb-bar { height: 6px; border-radius: 2px; background: var(--accent); opacity: 0.8; }
+  .lb-val { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--ink4); width: 60px; text-align: right; }
+  .lb-total {
+    border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .lb-total-label { font-size: 0.75rem; color: var(--ink3); font-family: 'JetBrains Mono', monospace; }
+  .lb-total-val { font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
 
-    h2 {
-      font-size: 22px; font-weight: 600; color: #fff;
-      margin: 64px 0 20px; letter-spacing: -0.01em;
-      padding-bottom: 14px; border-bottom: 1px solid var(--border);
-    }
-
-    h3 {
-      font-size: 16px; font-weight: 600; color: var(--text);
-      margin: 36px 0 12px; letter-spacing: -0.01em;
-    }
-
-    p { margin-bottom: 18px; color: #ccc; }
-
-    .callout {
-      border-left: 3px solid var(--accent);
-      background: var(--accent-dim);
-      padding: 18px 24px; margin: 28px 0;
-      border-radius: 0 4px 4px 0;
-      font-size: 14px; color: #bbb; font-style: italic;
-    }
-
-    pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border); border-radius: 6px;
-      padding: 24px 28px; overflow-x: auto;
-      margin: 24px 0; font-family: var(--mono);
-      font-size: 13px; line-height: 1.7; color: #ccc;
-    }
-    .comment { color: #555; }
-    .keyword { color: #c8f04a; }
-    .string { color: #98d9a0; }
-    .type { color: #79b8ff; }
-    .number { color: #f0a050; }
-
-    .table-wrap { overflow-x: auto; margin: 28px 0; }
-    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    th {
-      text-align: left; padding: 12px 16px;
-      font-size: 11px; font-family: var(--mono);
-      text-transform: uppercase; letter-spacing: 0.07em;
-      color: var(--muted); border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    td {
-      padding: 13px 16px; border-bottom: 1px solid #1a1a1a;
-      color: #bbb; vertical-align: top;
-    }
-    tr:last-child td { border-bottom: none; }
-    td:first-child { color: var(--text); font-weight: 500; }
-    td code {
-      font-family: var(--mono); font-size: 12px;
-      background: var(--tag-bg); padding: 1px 6px;
-      border-radius: 3px; color: var(--accent);
-    }
-
-    .lessons { display: flex; flex-direction: column; gap: 20px; margin: 24px 0; }
-    .lesson {
-      display: flex; gap: 20px; align-items: flex-start;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 20px 24px;
-    }
-    .lesson-num {
-      font-family: var(--mono); font-size: 12px; color: var(--accent);
-      background: var(--accent-dim); border: 1px solid rgba(200,240,74,0.2);
-      width: 32px; height: 32px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; font-weight: 500;
-    }
-    .lesson-body { flex: 1; }
-    .lesson-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-    .lesson-body p { font-size: 14px; color: var(--muted); margin: 0; }
-
-    /* Architecture diagram */
-    .arch {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 36px 32px; margin: 28px 0;
-      font-family: var(--mono); font-size: 12px; overflow-x: auto;
-    }
-    .arch-row { display: flex; align-items: flex-start; gap: 0; margin: 8px 0; }
-    .arch-label {
-      color: var(--muted); font-size: 10px; text-transform: uppercase;
-      letter-spacing: 0.1em; width: 120px; flex-shrink: 0; padding-top: 6px;
-    }
-    .arch-boxes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .arch-box {
-      background: #1e1e1e; border: 1px solid #2a2a2a;
-      border-radius: 4px; padding: 5px 12px;
-      color: #ccc; font-size: 11px; white-space: nowrap;
-    }
-    .arch-box.hi { border-color: rgba(200,240,74,0.3); color: var(--accent); }
-    .arch-box.warn { border-color: rgba(240,160,80,0.3); color: #f0a050; }
-    .arch-arrow { color: #333; font-size: 16px; padding: 0 4px; }
-    .arch-caption {
-      font-size: 12px; color: var(--muted);
-      text-align: center; margin-top: 20px;
-      font-family: var(--sans); font-style: italic;
-    }
-    .arch-divider { border-top: 1px dashed #222; margin: 14px 0; }
-
-    /* Latency budget bar */
-    .latency-budget {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 28px 32px; margin: 28px 0;
-    }
-    .lb-title {
-      font-size: 11px; font-family: var(--mono);
-      text-transform: uppercase; letter-spacing: 0.07em;
-      color: var(--muted); margin-bottom: 20px;
-    }
-    .lb-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
-    .lb-stage { font-size: 12px; color: #ccc; width: 200px; flex-shrink: 0; }
-    .lb-bar-wrap { flex: 1; background: #1a1a1a; border-radius: 2px; height: 6px; }
-    .lb-bar { height: 6px; border-radius: 2px; background: var(--accent); opacity: 0.7; }
-    .lb-val { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 60px; text-align: right; }
-    .lb-total {
-      border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .lb-total-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
-    .lb-total-val { font-size: 14px; font-family: var(--mono); color: var(--accent); font-weight: 600; }
-
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 40px; text-align: center;
-      font-size: 13px; color: var(--muted);
-      display: flex; flex-direction: column; gap: 12px; align-items: center;
-    }
-    footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    footer a:hover { color: var(--accent); }
-    .footer-links { display: flex; gap: 24px; }
-
-    @media (max-width: 640px) {
-      .hero, .content { padding-left: 20px; padding-right: 20px; }
-      nav { padding: 12px 20px; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      h1 { font-size: 24px; }
-      .arch-label { width: 80px; font-size: 9px; }
-      .lb-stage { width: 130px; }
-    }
-  </style>
+  .article-footer {
+    border-top: 1px solid var(--border); padding: 28px 0 0; margin-top: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .article-footer p { font-size: 0.8rem; color: var(--ink4); margin: 0; }
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a { font-size: 0.8rem; color: var(--ink4); }
+  .footer-links a:hover { color: var(--ink); text-decoration: none; }
+  
+  @media (max-width: 640px) {
+    .scale-grid { grid-template-columns: repeat(2, 1fr); }
+    .arch-label { width: 80px; font-size: 0.55rem; }
+    .lb-stage { width: 130px; }
+  }
+</style>
 </head>
 <body>
+<div class="page">
 
-<nav>
-  <a href="https://utm-git.github.io/utkarshmehrotra/">Home</a>
-  <span class="sep">·</span>
-  <a href="https://utm-git.github.io/utkarshmehrotra/#writing">Writing</a>
-  &nbsp;&nbsp;
-  <a href="https://github.com/utm-git">GitHub</a>
-  &nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
-</nav>
+  <header class="site-header">
+    <div style="display:flex;gap:20px">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Home</a>
+      <span class="header-sep">·</span>
+      <a href="https://utm-git.github.io/utkarshmehrotra/#writing">Writing</a>
+    </div>
+    <div style="display:flex;gap:16px">
+      <a href="https://github.com/utm-git">GitHub</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+    </div>
+  </header>
 
-<div class="hero">
-  <div class="tags">
-    <span class="tag accent">Engineering</span>
-    <span class="tag">Distributed Systems</span>
-    <span class="tag">Financial Infrastructure</span>
-    <span class="tag">Multi-Geography</span>
-    <span class="tag">Event Sourcing</span>
+  <div class="article-header">
+    <span class="category-label">Engineering · Distributed Systems · Financial Infrastructure</span>
+    <h1>Building a Lending Platform Across Four Markets: Correctness at Scale</h1>
+    <p class="subtitle">How we designed Samsung's lending platform's infrastructure to guarantee financial correctness under distributed failure — and why the hardest problems were not throughput, but consistency, auditability, and the operational reality of third-party payment rails.</p>
+    <div class="byline">
+      <span class="byline-author">Utkarsh Mehrotra</span>
+      <span class="byline-dot">·</span>
+      <span>Chief Engineer, Samsung Electronics</span>
+      <span class="byline-dot">·</span>
+      <span>Samsung's lending platform</span>
+    </div>
   </div>
 
-  <h1>Building a Lending Platform Across Four Markets: Correctness at Scale</h1>
-
-  <p class="subtitle">
-    How we designed Samsung Finance+'s lending infrastructure to guarantee financial correctness under distributed failure — and why the hardest problems were not throughput, but consistency, auditability, and the operational reality of third-party payment rails.
-  </p>
-
-  <div class="byline">
-    <strong>Utkarsh Mehrotra</strong>
-    <span class="dot">·</span>
-    Chief Engineer, Samsung Electronics
-    <span class="dot">·</span>
-    Samsung Finance+
+  <div class="scale-grid">
+    <div class="scale-col">
+      <div class="scale-num">4</div>
+      <div class="scale-detail">Active markets<br>TH · ID · PH · IN</div>
+    </div>
+    <div class="scale-col">
+      <div class="scale-num">0</div>
+      <div class="scale-detail">Core changes<br>per new geography</div>
+    </div>
+    <div class="scale-col">
+      <div class="scale-num">T+0</div>
+      <div class="scale-detail">Settlement<br>from T+2 manual</div>
+    </div>
+    <div class="scale-col">
+      <div class="scale-num">1×</div>
+      <div class="scale-detail">Every payment event<br>processed, guaranteed</div>
+    </div>
   </div>
-</div>
 
-<div class="stats">
-  <div class="stat">
-    <div class="stat-value">4</div>
-    <div class="stat-label">Active markets<br>TH · ID · PH · IN</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">0</div>
-    <div class="stat-label">Core changes<br>per new geography</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">T+0</div>
-    <div class="stat-label">Settlement<br>from T+2 manual</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">1×</div>
-    <div class="stat-label">Every payment event<br>processed, guaranteed</div>
-  </div>
-</div>
-
-<div class="content">
-
-  <h2>Background</h2>
+  <article>
+<h2>Background</h2>
 
   <p>
-    When Samsung Finance+ began expanding its device financing product across Southeast Asia and India, the engineering team hit a problem that compounds silently until it becomes unmanageable: every new market was a separate engineering project. Thailand had different regulatory requirements around loan tenures and repayment schedules. Indonesia required different currency handling and local payment rail integrations. The Philippines had its own collection workflows and delinquency thresholds. India brought an entirely different compliance surface.
+    When Samsung's lending platform began expanding its device financing product across Southeast Asia and India, the engineering team hit a problem that compounds silently until it becomes unmanageable: every new market was a separate engineering project. Thailand had different regulatory requirements around loan tenures and repayment schedules. Indonesia required different currency handling and local payment rail integrations. The Philippines had its own collection workflows and delinquency thresholds. India brought an entirely different compliance surface.
   </p>
 
   <p>
@@ -324,7 +278,7 @@
 
   <h2>System Requirements</h2>
 
-  <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; margin: 0 0 20px 0;">
+  
     <li style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px 20px; font-size:14px; color:#bbb;">
       <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R1 · Market isolation and extensibility</span>
       Market-specific behaviour — repayment schedules, currency, collection thresholds, rail integrations — must be expressible as configuration. A bug in Thailand's EMI calculation must not touch Indonesia's loan state. A new market must require zero changes to core service logic.
@@ -341,7 +295,7 @@
       <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R4 · Third-party rail resilience</span>
       Payment rail providers across four markets have materially different availability and delivery SLAs. The platform must remain financially consistent during provider outages, delayed settlement signals, and duplicate event delivery — without manual intervention.
     </li>
-  </ul>
+  
 
   <h2>Architecture Overview</h2>
 
@@ -434,7 +388,7 @@
     Schema versioning is the lesson we learned painfully. The config store schema evolved across the first two market rollouts. Services deployed against v1 of the schema consumed fields that v2 renamed or restructured. The compatibility shim we added retroactively was functional but fragile. The fix is to treat config schema changes exactly like API changes: they are versioned, backward-compatible by default, and breaking changes require an explicit migration with a deprecation window.
   </p>
 
-<pre><span class="comment">// Config schema versioning — services declare the version they support</span>
+<div class="code-block"><pre><span class="comment">// Config schema versioning — services declare the version they support</span>
 <span class="keyword">data class</span> <span class="type">MarketConfig</span>(
     <span class="keyword">val</span> schemaVersion : <span class="type">Int</span>,           <span class="comment">// consumers pin to a version</span>
     <span class="keyword">val</span> marketId       : <span class="type">String</span>,
@@ -455,7 +409,7 @@
         <span class="keyword">return</span> canary.config   <span class="comment">// deterministic per loan, not per request</span>
     }
     <span class="keyword">return</span> configStore.getStable(marketId)
-}</pre>
+}</pre></div>
 
   <p>
     The canary rollout detail is load-bearing. Config changes in a financial platform are not code changes, but they carry the same risk — a misconfigured delinquency threshold or rounding rule affects every loan in a market. Rolling out a config change to 5% of loans, observing ledger reconciliation and state transition metrics for 24 hours, then promoting to 100% is the same discipline as a code canary. The hash on `loanId` rather than on a random seed ensures the same loan always sees the same config version during rollout — preventing a loan from being processed under v1 and then v2 for the same repayment event.
@@ -471,7 +425,7 @@
     The standard solution is the transactional outbox pattern. The rail adapter writes the payment event to an outbox table in the same database transaction as the loan update. A separate relay process reads unprocessed outbox rows and publishes them to the event bus, marking them processed on acknowledgement. The loan state update and the event publication are now atomic — either both happen, or neither does.
   </p>
 
-<pre><span class="comment">// Transactional outbox — atomic loan update + event publication</span>
+<div class="code-block"><pre><span class="comment">// Transactional outbox — atomic loan update + event publication</span>
 <span class="keyword">fun</span> <span class="type">handleSettlementEvent</span>(event: <span class="type">SettlementEvent</span>) = db.transaction {
     <span class="comment">// Both writes in the same transaction — no dual-write risk</span>
     loanRepo.markPaymentReceived(event.loanId, event.amount, event.settledAt)
@@ -500,7 +454,7 @@
         )
         <span class="keyword">if</span> (published) outboxRepo.markProcessed(entry.id)
     }
-}</pre>
+}</pre></div>
 
   <p>
     The outbox pattern shifts the failure surface from "atomic dual-write" — which cannot be made safe — to "at-least-once relay with idempotent consumer" — which can. Downstream consumers handle duplicate events via the idempotency key. The event bus sees each settlement event at least once, and consumers discard duplicates. The loan database is always the source of truth; the event bus is its durable projection.
@@ -516,7 +470,7 @@
     A local database transaction cannot span service boundaries. The distributed alternative is a saga — a sequence of local transactions, each of which publishes an event that triggers the next step. If a step fails, compensating transactions undo the preceding steps.
   </p>
 
-<pre><span class="comment">// Saga definition — each step owns its local transaction + compensation</span>
+<div class="code-block"><pre><span class="comment">// Saga definition — each step owns its local transaction + compensation</span>
 <span class="keyword">val</span> repaymentSaga = saga {
     step(
         execute     = { reconciliationSvc.applyRepayment(it) },
@@ -540,7 +494,7 @@
 <span class="keyword">fun</span> <span class="type">executeSaga</span>(sagaId: <span class="type">String</span>, event: <span class="type">PaymentEvent</span>) {
     <span class="keyword">val</span> state = sagaStore.getOrCreate(sagaId)
     repaymentSaga.resume(state, event)   <span class="comment">// picks up from last completed step</span>
-}</pre>
+}</pre></div>
 
   <p>
     The saga store is the correctness guarantee. Every step completion and every compensation is written to the saga store before the next step executes. If the orchestrator crashes mid-saga, it resumes from the last persisted checkpoint. A repayment event that crashes between ledger write and loan state transition will, on recovery, either complete the transition or reverse the ledger entry — never leave both services in divergent states.
@@ -560,7 +514,7 @@
     We model the loan as an event-sourced aggregate. The append-only event log is the source of truth. The current loan state — the projection — is derived by replaying the event stream from the beginning. Read paths query the projection; write paths append an event and update the projection.
   </p>
 
-<pre><span class="comment">// Event-sourced loan aggregate — state is a pure function of events</span>
+<div class="code-block"><pre><span class="comment">// Event-sourced loan aggregate — state is a pure function of events</span>
 <span class="keyword">data class</span> <span class="type">Loan</span>(
     <span class="keyword">val</span> loanId       : <span class="type">String</span>,
     <span class="keyword">val</span> state        : <span class="type">LoanState</span>,
@@ -587,7 +541,7 @@
     eventStore
         .streamEvents(loanId)
         .takeWhile { it.occurredAt <= asOf }
-        .fold(Loan.empty(loanId), ::apply)</pre>
+        .fold(Loan.empty(loanId), ::apply)</pre></div>
 
   <p>
     The audit replay function is load-bearing infrastructure, not an analytics convenience. When a regulator queries a disputed loan in Indonesia and asks for its state at a specific timestamp, `replayAt` produces a deterministic answer from the immutable event log — not a reconstruction from a mutable table's change history. The event log is stored with WORM retention; once written, events cannot be modified or deleted. The projection can be rebuilt at any time from scratch.
@@ -678,7 +632,7 @@
     The fix introduces a settlement window gate as an explicit stage between the delinquency scorer and the collection trigger. The gate reads the pending payment flag from the reconciliation service, checks it against the market-configured settlement window tolerance, and suppresses collection triggers for loans within tolerance. Loans that exceed the tolerance — where a settlement signal is genuinely overdue — are routed to manual review rather than automated collection.
   </p>
 
-<pre><span class="comment">// Settlement window gate — explicit synchronisation between subsystems</span>
+<div class="code-block"><pre><span class="comment">// Settlement window gate — explicit synchronisation between subsystems</span>
 <span class="keyword">fun</span> <span class="type">evaluateCollectionTrigger</span>(loan: <span class="type">Loan</span>): <span class="type">CollectionDecision</span> {
     <span class="keyword">val</span> config = configStore.resolve(loan.marketId)
 
@@ -705,7 +659,7 @@
 
     <span class="keyword">return</span> delinquencySvc.score(loan, config.delinquencyPolicy)
         .toCollectionDecision()
-}</pre>
+}</pre></div>
 
   <p>
     The settlement window tolerance is per-market configuration — GCash in the Philippines has a materially different SLA profile than UPI in India. UPI settlements clear in under 30 seconds under normal conditions; GCash has a documented P99 of several minutes during peak load. Treating these identically would either produce excessive false-positive collection triggers for the Philippines or insufficient coverage for India. The config resolution at this stage is the same pattern used everywhere in the platform — the gate has no hardcoded market awareness.
@@ -868,16 +822,18 @@
     The broader principle: in a distributed financial system, correctness is a property of the interaction between components, not of any individual component. A reconciliation service that is correct in isolation, a delinquency pipeline that is correct in isolation, and a collection service that is correct in isolation can collectively produce an incorrect outcome — as they did, until we modelled their interaction explicitly. Designing for correctness at the system level, not the service level, is the engineering discipline that separates platforms that hold up from platforms that require constant firefighting.
   </p>
 
-</div>
 
-<footer>
-  <div>© Utkarsh Mehrotra</div>
-  <div class="footer-links">
-    <a href="https://utm-git.github.io/utkarshmehrotra/">Portfolio</a>
-    <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
-    <a href="https://github.com/utm-git">GitHub</a>
+  </article>
+
+  <div class="article-footer">
+    <p>© Utkarsh Mehrotra</p>
+    <div class="footer-links">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Portfolio</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+      <a href="https://github.com/utm-git">GitHub</a>
+    </div>
   </div>
-</footer>
 
+</div>
 </body>
 </html>
