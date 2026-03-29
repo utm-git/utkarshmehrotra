@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designing Financial Infrastructure for Extreme Scale (50K+ req/sec)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #111; --ink2: #333; --ink3: #666; --ink4: #999;
+    --bg: #fff; --bg2: #f7f8fa; --bg3: #f0f1f3;
+    --border: #e4e5e7;
+    --accent: #0055d4;
+    --accent2: #d47000;
+    --danger: #c00;
+    --mono-bg: #0f1117; --mono-fg: #c9d1d9;
+    --mono-comment: #6a9f6a; --mono-key: #f9c784; --mono-str: #9ecbff;
+  }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink); background: var(--bg);
+    line-height: 1.75; -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 0 32px 80px; }
+
+  .site-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0; border-bottom: 1px solid var(--border);
+  }
+  .site-header a { font-size: 0.8rem; color: var(--ink3); text-decoration: none; font-weight: 500; }
+  .site-header a:hover { color: var(--ink); }
+  .header-sep { color: var(--border); }
+
+  .article-header { padding: 52px 0 40px; border-bottom: 1px solid var(--border); }
+  .category-label {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 700;
+    letter-spacing: -0.025em; line-height: 1.2;
+    color: var(--ink); margin-bottom: 18px;
+  }
+  .subtitle {
+    font-size: 1.05rem; color: var(--ink3); line-height: 1.65;
+    margin-bottom: 28px; max-width: 680px;
+  }
+  .byline { display: flex; align-items: center; gap: 16px; font-size: 0.83rem; color: var(--ink4); }
+  .byline-author { font-weight: 600; color: var(--ink2); }
+  .byline-dot { color: var(--border); }
+
+  /* Scale comparison */
+  .scale-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0; border: 1px solid var(--border); border-radius: 8px;
+    margin: 40px 0 48px; overflow: hidden;
+  }
+  .scale-col { padding: 20px 22px; border-right: 1px solid var(--border); }
+  .scale-col:last-child { border-right: none; }
+  .scale-col-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink4); margin-bottom: 10px;
+  }
+  .scale-col.current { background: var(--bg2); }
+  .scale-col.paypal  { background: #fffaf5; }
+  .scale-col.jpmc    { background: #fff5f5; }
+  .scale-num { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+  .scale-num.c { color: var(--ink3); }
+  .scale-num.p { color: var(--accent2); }
+  .scale-num.j { color: var(--danger); }
+  .scale-detail { font-size: 0.75rem; color: var(--ink4); line-height: 1.6; }
+
+  article { padding-top: 8px; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--ink); margin: 52px 0 14px;
+  }
+  h3 {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink3); margin: 36px 0 10px;
+  }
+  p { font-size: 0.97rem; color: var(--ink2); margin-bottom: 1.1rem; line-height: 1.78; }
+  strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82em;
+    background: var(--bg3); padding: 2px 6px; border-radius: 4px; color: #c7254e;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .callout {
+    background: var(--bg2); border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0; padding: 18px 22px; margin: 32px 0;
+  }
+  .callout p { font-size: 0.97rem; color: var(--ink2); margin: 0; line-height: 1.65; font-style: italic; }
+
+  .code-block {
+    background: var(--mono-bg); border-radius: 8px;
+    padding: 20px 24px; margin: 24px 0; overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    line-height: 1.8; color: var(--mono-fg); margin: 0; white-space: pre;
+  }
+  .code-block .cm { color: var(--mono-comment); }
+  .code-block .kw { color: var(--mono-key); }
+  .code-block .st { color: var(--mono-str); }
+  .code-block .fn { color: #79c0ff; }
+
+  .diagram-wrap {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px 20px 20px; margin: 32px 0; overflow-x: auto;
+  }
+  .diagram-label {
+    font-size: 0.72rem; font-weight: 500; color: var(--ink4);
+    text-align: center; margin-top: 14px; letter-spacing: 0.02em;
+  }
+
+  .failure-list { list-style: none; margin: 16px 0 24px; }
+  .failure-list li {
+    display: grid; grid-template-columns: 72px 1fr; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.93rem; color: var(--ink2); line-height: 1.65; align-items: start;
+  }
+  .failure-list li:last-child { border-bottom: none; }
+  .fbadge {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    display: inline-block; margin-top: 2px;
+  }
+  .fb-perf { background: #e8f0fe; color: #1a56c4; }
+  .fb-reg  { background: #0f1117; color: #79c0ff; }
+  .fb-hard { background: #fff0f0; color: #a00; }
+
+  .latency-table { width: 100%; border-collapse: collapse; margin: 20px 0 32px; font-size: 0.87rem; }
+  .latency-table th {
+    text-align: left; font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink4);
+    padding: 8px 14px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  }
+  .latency-table td {
+    padding: 11px 14px; border-bottom: 1px solid var(--border);
+    color: var(--ink2); vertical-align: top; line-height: 1.55;
+  }
+  .latency-table tr:last-child td { border-bottom: none; }
+  .latency-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--ink); }
+  .latency-table td:nth-child(2) { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .latency-table tr.total td { font-weight: 700; color: var(--ink); background: var(--bg2); }
+
+  .decision { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+  .decision-q { background: var(--bg2); padding: 12px 16px; font-size: 0.88rem; font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--border); }
+  .decision-a { padding: 12px 16px; font-size: 0.87rem; color: var(--ink2); line-height: 1.65; }
+  .decision-a strong { color: var(--accent); }
+
+  .article-footer {
+    border-top: 1px solid var(--border); padding: 28px 0 0; margin-top: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .article-footer p { font-size: 0.8rem; color: var(--ink4); margin: 0; }
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a { font-size: 0.8rem; color: var(--ink4); }
+  .footer-links a:hover { color: var(--ink); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="site-header">
+    <div style="display:flex;gap:20px">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Home</a>
+      <span class="header-sep">·</span>
+      <a href="https://utm-git.github.io/utkarshmehrotra/#writing">Writing</a>
+    </div>
+    <div style="display:flex;gap:16px">
+      <a href="https://github.com/utm-git">GitHub</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+    </div>
+  </header>
+
+  <div class="article-header">
+    <span class="category-label">Engineering · Distributed Systems · Financial Infrastructure</span>
+    <h1>Designing Financial Infrastructure for Extreme Scale (50K+ req/sec)</h1>
+    <p class="subtitle">A systematic analysis of where a 10M events/day fraud detection pipeline breaks at JPMC and PayPal throughput levels — and the architectural changes required at each scale inflection point.</p>
+    <div class="byline">
+      <span class="byline-author">Utkarsh Mehrotra</span>
+      <span class="byline-dot">·</span>
+      <span>Chief Engineer, Samsung Electronics</span>
+      <span class="byline-dot">·</span>
+      <span>Ex–Western Union</span>
+    </div>
+  </div>
+
+  <div class="scale-grid">
+    <div class="scale-col current">
+      <div class="scale-col-label">Baseline (built)</div>
+      <div class="scale-num c">115/s</div>
+      <div class="scale-detail">10M events/day<br>&lt;1s P99 latency<br>3 stream types<br>Single region</div>
+    </div>
+    <div class="scale-col paypal">
+      <div class="scale-col-label">PayPal tier</div>
+      <div class="scale-num p">~1,500/s</div>
+      <div class="scale-detail">~40M txns/day + aux<br>&lt;300ms P99 scoring<br>10+ stream types<br>Multi-region active-active</div>
+    </div>
+    <div class="scale-col jpmc">
+      <div class="scale-col-label">JPMC tier</div>
+      <div class="scale-num j">50,000+/s</div>
+      <div class="scale-detail">$10T+ annually<br>&lt;50ms P99 on card rails<br>Microsecond ACH/RTGS SLAs<br>Global multi-datacenter</div>
+    </div>
+  </div>
+
+  <article>
+
+    <h2>Introduction</h2>
+
+    <p>The fraud detection pipeline described in a <a href="wu-pipeline.html">previous post</a> was designed to solve a specific organisational problem: giving a fraud analytics team the ability to act on attack patterns in near real-time rather than across sprint cycles. At 10M events/day and sub-second latency, it does that reliably. But the same architectural decisions that make it correct at that scale would cause it to fail quietly — and then loudly — under the throughput requirements of a JPMC or PayPal.</p>
+
+    <p>The failure is not hypothetical. Tier-1 financial institutions have learned these lessons expensively: JPMC's payment infrastructure must sustain fraud scoring at 50,000+ events/second with a 50ms P99 SLA on card rails. A single architectural assumption that holds at 115 events/second — Flink managing all session state in RocksDB, a single model handling all fraud typologies, passive failover for regional outages — becomes a liability that manifests as missed fraud, regulatory exposure, or payment rail downtime at that throughput.</p>
+
+    <p>This post is a systematic analysis of exactly which components fail, at which scale inflection, and why. For each failure mode, we describe the options we evaluated and the specific reasons for the architectural changes required. The goal is to be precise about the engineering tradeoffs rather than assert that scale requires "more infrastructure."</p>
+
+    <h2>Where the Baseline Design Fails</h2>
+
+    <p>The five structural failure modes that emerge as throughput scales beyond 1,000 events/second are distinct and require different remediation strategies:</p>
+
+    <ul class="failure-list">
+      <li>
+        <span class="fbadge fb-hard">Latency</span>
+        <div><strong>Tail latency amplification.</strong> At 115 events/second, a P99 of 800ms is acceptable. At 50,000/second, tail latency compounds across stages — a single slow ML scoring call backs up the Spark rule evaluation stage, which backs up the Flink enrichment stage, which backs up Kafka consumer groups. A single end-to-end SLA must be replaced with per-stage latency budgets, each enforced independently with circuit breakers at every service boundary.</div>
+      </li>
+      <li>
+        <span class="fbadge fb-perf">State size</span>
+        <div><strong>Flink RocksDB checkpoint degradation.</strong> Flink's RocksDB state backend begins exhibiting significant checkpoint overhead above approximately 100GB per task manager. At PayPal-scale user populations, checkpoint sizes balloon proportionally, and recovery time following a task manager failure extends beyond ten minutes. This is unacceptable when payment scoring must resume within seconds. The solution requires explicit state tiering: hot session context in JVM heap, 24-hour history in RocksDB, and long-term state in an external store.</div>
+      </li>
+      <li>
+        <span class="fbadge fb-reg">Regulatory</span>
+        <div><strong>Explainability requirements.</strong> At institutions operating under OCC, Federal Reserve, and international regulatory frameworks, every fraud decision must be reconstructable deterministically: the input feature vector, the model version in production at decision time, and the decision logic must all be retrievable from an immutable audit log. Sampling SHAP values or relying on log approximations is not compliant. This is infrastructure, not a post-hoc analytics requirement.</div>
+      </li>
+      <li>
+        <span class="fbadge fb-hard">Geo-distribution</span>
+        <div><strong>Single-region availability.</strong> Active-passive failover at JPMC scale produces unacceptable recovery times. Leader election, connection rerouting, and state reconciliation after a regional failure takes 15–45 seconds at minimum — long enough to halt payment rails and cause material financial impact. Active-active multi-region operation is required from the outset, which introduces distributed state conflict resolution as a first-class engineering problem.</div>
+      </li>
+      <li>
+        <span class="fbadge fb-perf">Model freshness</span>
+        <div><strong>Batch retraining cadence.</strong> Fraud attack patterns shift within hours during an active campaign. A model trained on prior-day data may be blind to a new mule-network variant or synthetic identity pattern that emerged that morning. Tier-1 financial institutions require continuous model update mechanisms — online learning or near-continuous retraining pipelines — that push updated scoring logic to production infrastructure within minutes, not days.</div>
+      </li>
+    </ul>
+
+    <h2>Redesigned Architecture</h2>
+
+    <div class="diagram-wrap">
+      <svg width="100%" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#0055d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#aaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <text x="18"  y="18" font-size="8" fill="#999" letter-spacing="1.2" font-weight="600">INGEST</text>
+        <text x="170" y="18" font-size="8" fill="#999" letter-spacing="1.2" font-weight="600">STREAM BUS</text>
+        <text x="305" y="18" font-size="8" fill="#999" letter-spacing="1.2" font-weight="600">ENRICHMENT</text>
+        <text x="456" y="18" font-size="8" fill="#999" letter-spacing="1.2" font-weight="600">SCORING</text>
+        <text x="595" y="18" font-size="8" fill="#999" letter-spacing="1.2" font-weight="600">ACTION</text>
+
+        <rect x="10" y="28" width="128" height="28" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.7"/>
+        <text x="74" y="46" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Payment events</text>
+        <rect x="10" y="62" width="128" height="28" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.7"/>
+        <text x="74" y="80" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Auth / device signals</text>
+        <rect x="10" y="96" width="128" height="28" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.7"/>
+        <text x="74" y="114" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Behavioural stream</text>
+        <rect x="10" y="130" width="128" height="28" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.7"/>
+        <text x="74" y="148" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Graph / network events</text>
+        <rect x="10" y="164" width="128" height="28" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.7"/>
+        <text x="74" y="182" font-size="8" fill="#333" text-anchor="middle" font-weight="500">3P bureau feeds</text>
+        <rect x="10" y="198" width="128" height="24" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="74" y="214" font-size="7.5" fill="#79c0ff" text-anchor="middle">Schema Registry (Avro)</text>
+
+        <rect x="158" y="28" width="112" height="204" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="214" y="52" font-size="8.5" fill="#79c0ff" text-anchor="middle" font-weight="600">Kafka</text>
+        <text x="214" y="66" font-size="7" fill="#484f58" text-anchor="middle">Multi-region</text>
+        <text x="214" y="78" font-size="7" fill="#484f58" text-anchor="middle">MirrorMaker 2</text>
+        <line x1="168" y1="90" x2="260" y2="90" stroke="#30363d" stroke-width="0.5"/>
+        <text x="214" y="104" font-size="7" fill="#484f58" text-anchor="middle">50K partitions</text>
+        <text x="214" y="116" font-size="7" fill="#484f58" text-anchor="middle">user + instrument key</text>
+        <line x1="168" y1="128" x2="260" y2="128" stroke="#30363d" stroke-width="0.5"/>
+        <text x="214" y="142" font-size="7" fill="#484f58" text-anchor="middle">Tiered storage (S3)</text>
+        <line x1="168" y1="154" x2="260" y2="154" stroke="#30363d" stroke-width="0.5"/>
+        <text x="214" y="168" font-size="7" fill="#484f58" text-anchor="middle">Idempotent producers</text>
+        <line x1="168" y1="180" x2="260" y2="180" stroke="#30363d" stroke-width="0.5"/>
+        <text x="214" y="194" font-size="7" fill="#484f58" text-anchor="middle">RBAC + field encryption</text>
+        <line x1="168" y1="206" x2="260" y2="206" stroke="#30363d" stroke-width="0.5"/>
+        <text x="214" y="220" font-size="7" fill="#484f58" text-anchor="middle">Schema validation</text>
+
+        <line x1="138" y1="42" x2="156" y2="68" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="138" y1="76" x2="156" y2="100" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="138" y1="110" x2="156" y2="130" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="138" y1="144" x2="156" y2="160" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="138" y1="178" x2="156" y2="190" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+
+        <rect x="290" y="28" width="134" height="48" rx="4" fill="#f7f8fa" stroke="#0055d4" stroke-width="0.9"/>
+        <text x="357" y="48" font-size="8.5" fill="#111" text-anchor="middle" font-weight="600">Flink (stateful)</text>
+        <text x="357" y="62" font-size="7" fill="#666" text-anchor="middle">join · sessionise · 3-tier state</text>
+
+        <rect x="290" y="86" width="134" height="42" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="357" y="103" font-size="8.5" fill="#a8d8b4" text-anchor="middle">Feature Store</text>
+        <text x="357" y="117" font-size="7" fill="#4a7a5a" text-anchor="middle">Feast · online/offline parity</text>
+
+        <rect x="290" y="138" width="134" height="42" rx="4" fill="#1a0a2e" stroke="#4a2a6a" stroke-width="0.7"/>
+        <text x="357" y="155" font-size="8.5" fill="#c8a8e8" text-anchor="middle">Graph Engine</text>
+        <text x="357" y="169" font-size="7" fill="#8a68a8" text-anchor="middle">Neptune · mule detection</text>
+
+        <rect x="290" y="190" width="134" height="42" rx="4" fill="#1a0a05" stroke="#6a3a0a" stroke-width="0.7"/>
+        <text x="357" y="207" font-size="8.5" fill="#f0a870" text-anchor="middle">CEP Engine</text>
+        <text x="357" y="221" font-size="7" fill="#b07050" text-anchor="middle">Flink CEP · temporal rules</text>
+
+        <line x1="270" y1="90" x2="288" y2="52" stroke="#0055d4" stroke-width="0.8" marker-end="url(#ar)"/>
+        <line x1="270" y1="115" x2="288" y2="107" stroke="#0055d4" stroke-width="0.8" marker-end="url(#ar)"/>
+        <line x1="270" y1="155" x2="288" y2="159" stroke="#0055d4" stroke-width="0.8" marker-end="url(#ar)"/>
+        <line x1="270" y1="185" x2="288" y2="211" stroke="#0055d4" stroke-width="0.8" marker-end="url(#ar)"/>
+
+        <rect x="444" y="28" width="126" height="44" rx="4" fill="#f7f8fa" stroke="#0055d4" stroke-width="0.9"/>
+        <text x="507" y="46" font-size="8.5" fill="#111" text-anchor="middle" font-weight="600">Ensemble Scorer</text>
+        <text x="507" y="60" font-size="7" fill="#666" text-anchor="middle">GBM + Neural net + Rules</text>
+
+        <rect x="444" y="82" width="126" height="38" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="507" y="99" font-size="8" fill="#a8d8b4" text-anchor="middle">Model Registry</text>
+        <text x="507" y="112" font-size="7" fill="#4a7a5a" text-anchor="middle">champion / shadow</text>
+
+        <rect x="444" y="130" width="126" height="38" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="507" y="147" font-size="8" fill="#a8d8b4" text-anchor="middle">Explainability Layer</text>
+        <text x="507" y="161" font-size="7" fill="#4a7a5a" text-anchor="middle">SHAP per decision</text>
+
+        <rect x="444" y="178" width="126" height="38" rx="4" fill="#1a0a05" stroke="#6a3a0a" stroke-width="0.7"/>
+        <text x="507" y="195" font-size="8" fill="#f0a870" text-anchor="middle">Online Learning</text>
+        <text x="507" y="209" font-size="7" fill="#b07050" text-anchor="middle">champion / shadow promo</text>
+
+        <line x1="424" y1="52" x2="442" y2="50" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="424" y1="107" x2="442" y2="101" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="424" y1="159" x2="442" y2="149" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="424" y1="211" x2="442" y2="197" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+
+        <rect x="590" y="28" width="118" height="34" rx="4" fill="#fff0f0" stroke="#e88" stroke-width="0.8"/>
+        <text x="649" y="46" font-size="8" fill="#a00" text-anchor="middle" font-weight="600">Block (pre-settlement)</text>
+        <text x="649" y="57" font-size="7" fill="#c66" text-anchor="middle">&lt;50ms SLA</text>
+
+        <rect x="590" y="72" width="118" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="649" y="90" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Step-up auth</text>
+        <text x="649" y="102" font-size="7" fill="#888" text-anchor="middle">risk-adaptive friction</text>
+
+        <rect x="590" y="116" width="118" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="649" y="134" font-size="8" fill="#333" text-anchor="middle" font-weight="500">Review queue</text>
+        <text x="649" y="146" font-size="7" fill="#888" text-anchor="middle">priority-scored</text>
+
+        <rect x="590" y="160" width="118" height="34" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.7"/>
+        <text x="649" y="178" font-size="8" fill="#79c0ff" text-anchor="middle">Immutable audit log</text>
+        <text x="649" y="190" font-size="7" fill="#484f58" text-anchor="middle">S3 + WORM · SHAP stored</text>
+
+        <rect x="590" y="204" width="118" height="34" rx="4" fill="#0a1a0f" stroke="#2a5a3a" stroke-width="0.7"/>
+        <text x="649" y="222" font-size="8" fill="#a8d8b4" text-anchor="middle">Observability</text>
+        <text x="649" y="234" font-size="7" fill="#4a7a5a" text-anchor="middle">Prometheus · Jaeger</text>
+
+        <line x1="570" y1="50" x2="588" y2="45" stroke="#0055d4" stroke-width="0.8" marker-end="url(#ar)"/>
+        <line x1="570" y1="72" x2="588" y2="89" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="570" y1="95" x2="588" y2="133" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="570" y1="118" x2="588" y2="177" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+        <line x1="570" y1="140" x2="588" y2="221" stroke="#ccc" stroke-width="0.7" marker-end="url(#ar2)"/>
+
+        <path d="M 649 238 Q 649 300 357 300 Q 280 300 280 242" fill="none" stroke="#b07050" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <text x="480" y="318" font-size="7" fill="#b07050" text-anchor="middle">online learning feedback loop</text>
+
+        <line x1="10" y1="345" x2="710" y2="345" stroke="#e4e5e7" stroke-width="0.5"/>
+        <text x="10"  y="362" font-size="7.5" fill="#0055d4" font-weight="600">0ms</text>
+        <text x="158" y="362" font-size="7.5" fill="#888">2ms ingest</text>
+        <text x="290" y="362" font-size="7.5" fill="#888">14ms enrich</text>
+        <text x="444" y="362" font-size="7.5" fill="#888">32ms score</text>
+        <text x="590" y="362" font-size="7.5" fill="#0055d4" font-weight="600">&lt;50ms P99</text>
+        <text x="360" y="380" font-size="7" fill="#888" text-anchor="middle">Per-stage latency budgets — enforced independently with circuit breakers at each boundary</text>
+      </svg>
+      <p class="diagram-label">Figure 1 — Tier-1 topology. Each layer owns its latency budget. Online learning feedback loop (dashed) drives continuous model updates from production labels.</p>
+    </div>
+
+    <h2>Component-Level Changes</h2>
+
+    <h3>Ingestion: schema enforcement and compound partition keys</h3>
+
+    <p>At 115 events/second, a schema-incompatible event from a misbehaving producer causes a Flink job exception that surfaces quickly in monitoring. At 50,000 events/second, the same producer firing for 30 seconds before detection can corrupt checkpoint state across multiple task managers and require a full state rebuild.</p>
+
+    <p>We address this by enforcing Avro schemas through Confluent Schema Registry at the producer boundary. Schema-incompatible events are rejected before reaching Kafka — the failure is loud and immediate at the producer, rather than silent and cascading inside the pipeline. Additionally, the partition key changes from <code>user_id</code> to <code>user_id + instrument_id</code>: at PayPal-scale user populations, a single user may hold dozens of payment instruments, and per-instrument velocity tracking across partitions requires expensive coordination that a compound key eliminates.</p>
+
+    <h3>State management: three-tier architecture</h3>
+
+    <p>The default Flink RocksDB state backend begins degrading at approximately 100GB per task manager. At PayPal-scale, state sizes routinely exceed this threshold, checkpoint durations extend, and post-failure recovery times cross ten minutes — long enough to produce measurable gaps in fraud scoring coverage.</p>
+
+    <p>The redesigned state architecture uses explicit tiering based on access recency:</p>
+
+    <ul style="margin: 14px 0 20px; padding-left: 20px; color: var(--ink2); font-size: 0.93rem; line-height: 1.8;">
+      <li><strong>JVM heap</strong> — last 60 seconds of per-user session context. Microsecond access. Used for in-flight event enrichment.</li>
+      <li><strong>RocksDB</strong> — 24-hour feature history. Low-millisecond access. Used for velocity calculations and session reconstruction.</li>
+      <li><strong>Redis Cluster / Aerospike</strong> — longer-horizon features and cross-session history. Low-millisecond remote access. Used for ML feature retrieval.</li>
+    </ul>
+
+    <p>Recovery time under this model is bounded by the RocksDB checkpoint size rather than total state size, since hot state is rebuilt from events after restart.</p>
+
+    <h3>Feature store: eliminating training/serving skew</h3>
+
+    <p>In the baseline architecture, features are computed inside the Flink job. This creates a structural coupling that becomes a significant problem at scale: the feature logic used in offline model training diverges from the logic applied at serving time. This gap — training/serving skew — is one of the most common sources of unexplained model degradation in production ML systems and one of the hardest to diagnose.</p>
+
+    <p>A dedicated feature store (Feast or Tecton) addresses this by providing a single feature definition that is executed identically by both the batch training pipeline and the real-time serving path. At tier-1 scale, where dozens of models consume hundreds of features, this is load-bearing infrastructure. Point-in-time correct feature retrieval — ensuring that training on historical data uses only features that were available at that moment — is a correctness requirement, not an optimization.</p>
+
+    <h3>Graph engine: network-level fraud detection</h3>
+
+    <p>Per-transaction scoring cannot detect coordinated fraud rings, where individual transactions appear legitimate but the account relationship graph reveals a money-mule network. At JPMC scale, this graph contains billions of edges and cannot be traversed naively at scoring time.</p>
+
+    <p>The solution is to pre-compute graph features on a scheduled basis and surface them through the feature store:</p>
+
+    <div class="code-block"><pre><span class="cm">// 3-hop mule proximity feature — computed offline, served online</span>
+<span class="fn">g</span>.V().has(<span class="st">'accountId'</span>, txn.senderId)
+  .repeat(out(<span class="st">'transferred_to'</span>).simplePath())
+  .times(<span class="kw">3</span>)
+  .where(has(<span class="st">'flagged'</span>, <span class="kw">true</span>))
+  .count()
+  .next()  <span class="cm">// → ring_proximity_score fed into ensemble scorer</span></pre></div>
+
+    <p>The real-time scoring path performs a feature lookup — not a live traversal — keeping graph-based signals on the critical latency path without incurring graph query latency at runtime.</p>
+
+    <h3>Scoring: ensemble models and per-decision explainability</h3>
+
+    <p>No single model architecture dominates across all fraud typologies. Gradient-boosted trees (XGBoost/LightGBM) perform well on velocity-based patterns. Neural networks better capture device fingerprint anomalies. Rule engines fire deterministically on known fraud signatures with zero model latency. An ensemble meta-scorer, weighted by each model's recent per-category precision, combines these signals and provides redundancy: if one model degrades silently, the others continue to catch the majority of fraud.</p>
+
+    <p>SHAP values must be computed for every scored event — not sampled. Under OCC examination, a disputed fraud decision requires deterministic reconstruction from the logged feature vector, the model version hash, the SHAP attribution values, and the final score. Approximations are not compliant. All of this is written to an append-only S3 log with WORM retention policy before the action layer is invoked.</p>
+
+    <div class="callout">
+      <p>At this scale, the difference between 94% and 96% model precision is not two percentage points. It is tens of millions of dollars in avoided false-positive friction annually — legitimate transactions blocked, customers lost, support costs incurred. Ensemble scoring and continuous model evaluation are economics, not engineering refinement.</p>
+    </div>
+
+    <h2>Latency Budget Model</h2>
+
+    <p>The single most important operational discipline change at tier-1 scale is replacing a single end-to-end SLA with owned per-stage latency budgets, enforced with circuit breakers at each boundary. When a stage exceeds its budget, it triggers a circuit breaker rather than propagating delay downstream.</p>
+
+    <table class="latency-table">
+      <thead>
+        <tr><th>Stage</th><th>P99 Budget</th><th>Enforcement mechanism</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kafka ingest</td><td>2ms</td><td>linger.ms=0, acks=1 for non-critical streams</td></tr>
+        <tr><td>Flink enrichment</td><td>12ms</td><td>Tiered state, async graph feature lookup, watermark tuning</td></tr>
+        <tr><td>Ensemble scoring</td><td>18ms</td><td>Parallel model calls, circuit breaker fires at 15ms</td></tr>
+        <tr><td>Action dispatch</td><td>5ms</td><td>Pre-warmed connection pools, local decision cache</td></tr>
+        <tr><td>Audit write</td><td>Async</td><td>Fire-and-forget to S3 — never on the critical path</td></tr>
+        <tr class="total"><td>Total P99</td><td>&lt;50ms</td><td>End-to-end traced with Jaeger, SLO alert fires at 40ms</td></tr>
+      </tbody>
+    </table>
+
+    <p>Moving the audit write off the critical path is the detail that surprises most engineers. At 50,000 events/second, a synchronous 5ms audit write contributes 250 seconds of cumulative blocking per second of pipeline throughput. Every non-decision output must be async.</p>
+
+    <h2>Architectural Decision Log</h2>
+
+    <div class="decision">
+      <div class="decision-q">Why active-active multi-region rather than active-passive with fast failover?</div>
+      <div class="decision-a"><strong>Recovery time arithmetic makes active-passive non-viable.</strong> We evaluated three options: active-passive with manual failover, active-passive with automated failover via a health-check controller, and active-active. Manual failover was eliminated immediately — human-in-the-loop recovery at JPMC-scale payment volumes is not a design, it is a disaster plan. Automated active-passive failover was the serious contender: it is operationally simpler and eliminates the distributed state conflict problem. The issue is arithmetic. At 50,000 events/second, the minimum automated failover time — Kubernetes health-check interval (30s default) plus leader election (5–15s) plus connection rerouting (10–20s) — produces a floor of roughly 45–65 seconds during which no fraud scoring occurs. At the transaction volumes of a major payment rail, 60 seconds of unscored traffic represents meaningful undetected fraud exposure. Active-active eliminates the outage by keeping both regions serving live traffic continuously. The engineering cost — designing velocity counters and blacklists as CRDTs and deploying a globally replicated store — is the explicit price of the availability requirement.</div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-q">Why an ensemble scorer rather than a single best-performing model?</div>
+      <div class="decision-a"><strong>No single architecture dominates across fraud typologies, and silent degradation is catastrophic.</strong> We evaluated three approaches: a single best-performing model (XGBoost, selected by offline F1 score), a model cascade (fast rule engine as a first pass, ML model for borderline cases), and a parallel ensemble. The single model performed best on the offline evaluation dataset — precisely the problem. Offline evaluation datasets reflect historical fraud patterns; they are systematically blind to emerging typologies. When the model degrades on a new attack pattern, there is no signal: precision drops on a category that was not prominent in the evaluation set, and the degradation is invisible until fraud losses accumulate. The cascade model was operationally attractive but introduced a hard dependency: if the rule engine's threshold is miscalibrated, it either over-filters (blocking ML scoring of legitimate borderline cases) or under-filters (passing everything to ML, negating the cascade benefit). The parallel ensemble, weighted by per-category precision on a rolling evaluation window, surfaces degradation immediately: a model's weight drops as its category-specific precision falls, and the other models compensate. The operational cost is three inference services rather than one. That cost is paid once; the benefit is continuous.</div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-q">Why keep Flink and Spark as separate stages at this scale?</div>
+      <div class="decision-a"><strong>Operational specialisation under strict latency budgets.</strong> Flink's credit-based flow control and stateful join primitives are purpose-built for low-latency streaming. Spark's SQL engine and analytical execution model are better suited to complex rule evaluation across enriched micro-batches. At 50,000 events/second with a 50ms end-to-end budget, using a single engine for both means accepting its worst latency characteristics across the full pipeline. The operational overhead of two runtimes is the explicit tradeoff for maintaining distinct performance profiles per stage.</div>
+    </div>
+
+    <h2>A Non-Obvious Engineering Problem: Distributed Velocity Counters Under Active-Active</h2>
+
+    <p>The most technically demanding consequence of active-active multi-region operation is one that does not surface in architecture diagrams: how do you maintain accurate per-user transaction velocity counts when two regions are writing to the same logical counter simultaneously?</p>
+
+    <p>Velocity counters — "this user has initiated 7 transactions in the last 5 minutes" — are among the highest-signal fraud features. They are also exactly the kind of shared mutable state that active-active replication makes dangerous. A naive approach — replicate writes synchronously across regions — reintroduces the availability problem we solved by going active-active. Synchronous cross-region writes add 50–150ms of replication latency on every increment, which blows the 50ms total budget before any enrichment or scoring has occurred.</p>
+
+    <p>We designed velocity counters as G-Counters (Grow-Only CRDTs), with one logical counter implemented as a vector of per-region counts:</p>
+
+    <div class="code-block"><pre><span class="cm">// G-Counter CRDT — each region maintains its own shard</span>
+<span class="cm">// Global count = sum of all region shards</span>
+<span class="cm">// No cross-region coordination required for increments</span>
+
+<span class="kw">data class</span> <span class="fn">VelocityCounter</span>(
+    <span class="kw">val</span> regionCounts: Map&lt;Region, Long&gt;  <span class="cm">// {us-east: 4, eu-west: 3}</span>
+) {
+    <span class="kw">fun</span> <span class="fn">increment</span>(region: Region) = copy(
+        regionCounts = regionCounts + (region to (regionCounts[region] ?: 0L) + 1)
+    )
+
+    <span class="cm">// Global velocity = sum of all region shards</span>
+    <span class="cm">// Eventual consistency: may lag by replication delay (~50-200ms)</span>
+    <span class="kw">val</span> globalCount: Long get() = regionCounts.values.sum()
+
+    <span class="cm">// Merge is commutative, associative, idempotent — safe under re-delivery</span>
+    <span class="kw">fun</span> <span class="fn">merge</span>(other: VelocityCounter) = copy(
+        regionCounts = (regionCounts.keys + other.regionCounts.keys)
+            .associateWith { maxOf(regionCounts[it] ?: 0L, other.regionCounts[it] ?: 0L) }
+    )
+}</pre></div>
+
+    <p>Each region increments only its own shard — zero cross-region coordination. Regional shard values are asynchronously replicated on a 100–200ms interval. The global count used for fraud scoring is the sum of all shards, which may lag by up to one replication interval. This means a user who makes 5 rapid transactions split across two regions might be scored against a count of 4 for up to 200ms before the sixth increment replicates.</p>
+
+    <p>This is an intentional, bounded consistency relaxation. The alternative — strong consistency — requires cross-region coordination on every increment and reintroduces the latency problem we solved by going active-active. The fraud risk of a 200ms lag on velocity counting is substantially lower than the fraud risk of 60 seconds of unscored traffic during a regional failover. That tradeoff — precise consistency versus system availability — must be made explicitly and documented, not discovered during an incident.</p>
+
+    <p>The sliding window expiry adds a second layer of complexity: counters must decrement as events age out of the window. G-Counters are grow-only; they cannot natively support decrements. We handle this with a separate PN-Counter (Positive-Negative CRDT) for expiry events, with the effective count derived as increments minus expired-increments. The expiry events are generated by a per-region TTL sweeper that runs on a 10-second interval, ensuring the window boundary error is bounded and predictable rather than unbounded.</p>
+
+
+
+    <p>The upgrades described in this post are additive, not corrective. The three-layer topology (ingest → process → act), entity-keyed partitioning, asynchronous ML integration, externalised rule management, and dead-letter queue design from the baseline system are all valid and carry forward unchanged.</p>
+
+    <p>The components introduced at tier-1 scale — feature store, graph engine, ensemble scoring, tiered state, SHAP audit logging, active-active geo-distribution — are not improvements to a flawed design. They are the natural evolution of a sound design as throughput, regulatory complexity, and failure tolerance requirements increase. Each upgrade is justified by a specific failure mode that does not appear at 115 events/second but becomes load-bearing above 1,500.</p>
+
+    <p>Understanding which upgrade to apply at which scale inflection, and being able to articulate why each one is necessary at that point and not before, is the practical substance of distributed systems engineering at this level.</p>
+
+  </article>
+
+  <div class="article-footer">
+    <p>© Utkarsh Mehrotra</p>
+    <div class="footer-links">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Portfolio</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+      <a href="https://github.com/utm-git">GitHub</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
