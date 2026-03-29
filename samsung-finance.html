@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building a Lending Platform Across Four Markets: Correctness at Scale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #c8f04a;
+      --accent-dim: rgba(200, 240, 74, 0.08);
+      --code-bg: #1a1a1a;
+      --tag-bg: #1e1e1e;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,15,15,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 40px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted);
+    }
+    nav a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    nav a:hover { color: var(--text); }
+    nav .sep { opacity: 0.3; }
+
+    .hero {
+      max-width: 780px; margin: 0 auto;
+      padding: 80px 40px 56px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+    .tag {
+      font-size: 11px; font-family: var(--mono); color: var(--muted);
+      background: var(--tag-bg); border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 3px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .tag.accent {
+      color: var(--accent);
+      border-color: rgba(200,240,74,0.25);
+      background: var(--accent-dim);
+    }
+
+    h1 {
+      font-size: clamp(26px, 4vw, 38px); font-weight: 600;
+      line-height: 1.2; letter-spacing: -0.02em;
+      margin-bottom: 20px; color: #fff;
+    }
+
+    .subtitle {
+      font-size: 17px; color: var(--muted);
+      line-height: 1.6; margin-bottom: 36px; max-width: 640px;
+    }
+
+    .byline {
+      font-size: 13px; color: var(--muted);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .byline strong { color: var(--text); }
+    .byline .dot { opacity: 0.3; }
+
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden; margin: 48px auto; max-width: 780px;
+    }
+    .stat {
+      background: var(--surface); padding: 24px 28px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-value {
+      font-size: 26px; font-weight: 600; color: var(--accent);
+      font-family: var(--mono); letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 11px; color: var(--muted);
+      line-height: 1.4; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .content { max-width: 780px; margin: 0 auto; padding: 0 40px 100px; }
+
+    h2 {
+      font-size: 22px; font-weight: 600; color: #fff;
+      margin: 64px 0 20px; letter-spacing: -0.01em;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 16px; font-weight: 600; color: var(--text);
+      margin: 36px 0 12px; letter-spacing: -0.01em;
+    }
+
+    p { margin-bottom: 18px; color: #ccc; }
+
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-dim);
+      padding: 18px 24px; margin: 28px 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 14px; color: #bbb; font-style: italic;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 24px 28px; overflow-x: auto;
+      margin: 24px 0; font-family: var(--mono);
+      font-size: 13px; line-height: 1.7; color: #ccc;
+    }
+    .comment { color: #555; }
+    .keyword { color: #c8f04a; }
+    .string { color: #98d9a0; }
+    .type { color: #79b8ff; }
+    .number { color: #f0a050; }
+
+    .table-wrap { overflow-x: auto; margin: 28px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th {
+      text-align: left; padding: 12px 16px;
+      font-size: 11px; font-family: var(--mono);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    td {
+      padding: 13px 16px; border-bottom: 1px solid #1a1a1a;
+      color: #bbb; vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { color: var(--text); font-weight: 500; }
+    td code {
+      font-family: var(--mono); font-size: 12px;
+      background: var(--tag-bg); padding: 1px 6px;
+      border-radius: 3px; color: var(--accent);
+    }
+
+    .lessons { display: flex; flex-direction: column; gap: 20px; margin: 24px 0; }
+    .lesson {
+      display: flex; gap: 20px; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 20px 24px;
+    }
+    .lesson-num {
+      font-family: var(--mono); font-size: 12px; color: var(--accent);
+      background: var(--accent-dim); border: 1px solid rgba(200,240,74,0.2);
+      width: 32px; height: 32px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-weight: 500;
+    }
+    .lesson-body { flex: 1; }
+    .lesson-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .lesson-body p { font-size: 14px; color: var(--muted); margin: 0; }
+
+    /* Architecture diagram */
+    .arch {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 36px 32px; margin: 28px 0;
+      font-family: var(--mono); font-size: 12px; overflow-x: auto;
+    }
+    .arch-row { display: flex; align-items: flex-start; gap: 0; margin: 8px 0; }
+    .arch-label {
+      color: var(--muted); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.1em; width: 120px; flex-shrink: 0; padding-top: 6px;
+    }
+    .arch-boxes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .arch-box {
+      background: #1e1e1e; border: 1px solid #2a2a2a;
+      border-radius: 4px; padding: 5px 12px;
+      color: #ccc; font-size: 11px; white-space: nowrap;
+    }
+    .arch-box.hi { border-color: rgba(200,240,74,0.3); color: var(--accent); }
+    .arch-box.warn { border-color: rgba(240,160,80,0.3); color: #f0a050; }
+    .arch-arrow { color: #333; font-size: 16px; padding: 0 4px; }
+    .arch-caption {
+      font-size: 12px; color: var(--muted);
+      text-align: center; margin-top: 20px;
+      font-family: var(--sans); font-style: italic;
+    }
+    .arch-divider { border-top: 1px dashed #222; margin: 14px 0; }
+
+    /* Latency budget bar */
+    .latency-budget {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px 32px; margin: 28px 0;
+    }
+    .lb-title {
+      font-size: 11px; font-family: var(--mono);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); margin-bottom: 20px;
+    }
+    .lb-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+    .lb-stage { font-size: 12px; color: #ccc; width: 200px; flex-shrink: 0; }
+    .lb-bar-wrap { flex: 1; background: #1a1a1a; border-radius: 2px; height: 6px; }
+    .lb-bar { height: 6px; border-radius: 2px; background: var(--accent); opacity: 0.7; }
+    .lb-val { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 60px; text-align: right; }
+    .lb-total {
+      border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .lb-total-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+    .lb-total-val { font-size: 14px; font-family: var(--mono); color: var(--accent); font-weight: 600; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px; text-align: center;
+      font-size: 13px; color: var(--muted);
+      display: flex; flex-direction: column; gap: 12px; align-items: center;
+    }
+    footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    footer a:hover { color: var(--accent); }
+    .footer-links { display: flex; gap: 24px; }
+
+    @media (max-width: 640px) {
+      .hero, .content { padding-left: 20px; padding-right: 20px; }
+      nav { padding: 12px 20px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      h1 { font-size: 24px; }
+      .arch-label { width: 80px; font-size: 9px; }
+      .lb-stage { width: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="https://utm-git.github.io/utkarshmehrotra/">Home</a>
+  <span class="sep">·</span>
+  <a href="https://utm-git.github.io/utkarshmehrotra/#writing">Writing</a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/utm-git">GitHub</a>
+  &nbsp;&nbsp;
+  <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+</nav>
+
+<div class="hero">
+  <div class="tags">
+    <span class="tag accent">Engineering</span>
+    <span class="tag">Distributed Systems</span>
+    <span class="tag">Financial Infrastructure</span>
+    <span class="tag">Multi-Geography</span>
+    <span class="tag">Event Sourcing</span>
+  </div>
+
+  <h1>Building a Lending Platform Across Four Markets: Correctness at Scale</h1>
+
+  <p class="subtitle">
+    How we designed Samsung Finance+'s lending infrastructure to guarantee financial correctness under distributed failure — and why the hardest problems were not throughput, but consistency, auditability, and the operational reality of third-party payment rails.
+  </p>
+
+  <div class="byline">
+    <strong>Utkarsh Mehrotra</strong>
+    <span class="dot">·</span>
+    Chief Engineer, Samsung Electronics
+    <span class="dot">·</span>
+    Samsung Finance+
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value">4</div>
+    <div class="stat-label">Active markets<br>TH · ID · PH · IN</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">0</div>
+    <div class="stat-label">Core changes<br>per new geography</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">T+0</div>
+    <div class="stat-label">Settlement<br>from T+2 manual</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">1×</div>
+    <div class="stat-label">Every payment event<br>processed, guaranteed</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <h2>Background</h2>
+
+  <p>
+    When Samsung Finance+ began expanding its device financing product across Southeast Asia and India, the engineering team hit a problem that compounds silently until it becomes unmanageable: every new market was a separate engineering project. Thailand had different regulatory requirements around loan tenures and repayment schedules. Indonesia required different currency handling and local payment rail integrations. The Philippines had its own collection workflows and delinquency thresholds. India brought an entirely different compliance surface.
+  </p>
+
+  <p>
+    The natural instinct — branch the codebase, override per market — is a trap. By the time a third market is live, the fourth requires an audit of every service before a single transaction can be processed. The bugs that surface in market three are invisible until they hit market four with different timing, different rail behaviour, and a different regulatory consequence.
+  </p>
+
+  <div class="callout">
+    The architectural question was not "how do we support four markets." It was "how do we design a system where a financial correctness failure in one market cannot propagate to another, and where the fifth market costs us nothing to add." Those two constraints — isolation and extensibility — shaped every decision.
+  </div>
+
+  <p>
+    This post describes the full architecture: a config-driven market abstraction that makes new geography rollout a data operation; a distributed saga-based payment pipeline with event sourcing for complete audit replay; a CRDT-influenced state machine that holds correctness under concurrent writes across markets; and the non-obvious production failures that only emerge when third-party payment rails behave adversarially.
+  </p>
+
+  <h2>System Requirements</h2>
+
+  <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; margin: 0 0 20px 0;">
+    <li style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px 20px; font-size:14px; color:#bbb;">
+      <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R1 · Market isolation and extensibility</span>
+      Market-specific behaviour — repayment schedules, currency, collection thresholds, rail integrations — must be expressible as configuration. A bug in Thailand's EMI calculation must not touch Indonesia's loan state. A new market must require zero changes to core service logic.
+    </li>
+    <li style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px 20px; font-size:14px; color:#bbb;">
+      <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R2 · Financial correctness under partial failure</span>
+      A repayment event processed twice must produce exactly one ledger entry. A loan state transition interrupted mid-execution must be resumable without double-booking. This is a correctness requirement, not a data quality requirement — the consequence of failure is a financial statement error or a regulatory finding.
+    </li>
+    <li style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px 20px; font-size:14px; color:#bbb;">
+      <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R3 · Full audit replay</span>
+      Every loan's current state must be deterministically reconstructible from its event history. Regulators in all four markets require reconstructible audit trails — not log approximations, but the ability to replay every state transition from origination to closure.
+    </li>
+    <li style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:16px 20px; font-size:14px; color:#bbb;">
+      <span style="color:var(--accent); font-family:var(--mono); font-size:11px; display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;">R4 · Third-party rail resilience</span>
+      Payment rail providers across four markets have materially different availability and delivery SLAs. The platform must remain financially consistent during provider outages, delayed settlement signals, and duplicate event delivery — without manual intervention.
+    </li>
+  </ul>
+
+  <h2>Architecture Overview</h2>
+
+  <div class="arch">
+    <div class="arch-row">
+      <div class="arch-label">MARKET LAYER</div>
+      <div class="arch-boxes">
+        <div class="arch-box hi">Config Store v2</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Schema Registry</div>
+        <div class="arch-box">Versioned Contracts</div>
+        <div class="arch-box">Canary Rollout</div>
+        <div class="arch-box">Config Audit Log</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">PAYMENT RAIL</div>
+      <div class="arch-boxes">
+        <div class="arch-box">TH · PromptPay</div>
+        <div class="arch-box">ID · GoPay / OVO</div>
+        <div class="arch-box">PH · GCash</div>
+        <div class="arch-box">IN · UPI / NACH</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box hi">Transactional Outbox</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">EVENT BUS</div>
+      <div class="arch-boxes">
+        <div class="arch-box hi">Event Bus</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Payment events</div>
+        <div class="arch-box">State change events</div>
+        <div class="arch-box">Audit events</div>
+        <div class="arch-box warn">DLQ (structured)</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">SAGA LAYER</div>
+      <div class="arch-boxes">
+        <div class="arch-box hi">Saga Orchestrator</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Reconciliation step</div>
+        <div class="arch-box">Ledger write step</div>
+        <div class="arch-box">State transition step</div>
+        <div class="arch-box warn">Compensating txns</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">EVENT STORE</div>
+      <div class="arch-boxes">
+        <div class="arch-box hi">Append-only Event Log</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Loan projections (read)</div>
+        <div class="arch-box">Audit replay engine</div>
+        <div class="arch-box">WORM retention</div>
+      </div>
+    </div>
+    <div class="arch-divider"></div>
+    <div class="arch-row">
+      <div class="arch-label">COLLECTION</div>
+      <div class="arch-boxes">
+        <div class="arch-box hi">Delinquency Pipeline</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">Risk scoring</div>
+        <div class="arch-box">Settlement window gate</div>
+        <div class="arch-box">Market-policy router</div>
+      </div>
+    </div>
+    <p class="arch-caption">Figure 1 — Full platform topology. The transactional outbox decouples rail integration from event publication. The saga orchestrator manages distributed state across services with compensating transactions. The event store provides full audit replay.</p>
+  </div>
+
+  <h2>Key Design Decisions</h2>
+
+  <h3>Config-driven market abstraction: versioned contracts, not runtime flags</h3>
+
+  <p>
+    The v1 instinct for multi-market configuration is a feature flag system: check the market ID at runtime, branch on it. This works for two markets. By four markets, the branching is pervasive. By eight, it is the dominant maintenance burden. The failure mode is not complexity — it is silent misconfiguration. A flag set incorrectly in Indonesia produces a bug that surfaces as a collection error in a market the debugging engineer does not have context for.
+  </p>
+
+  <p>
+    The design we landed on makes market behaviour entirely external to the services that consume it, with two additions over a naive config store: a schema registry with versioned contracts, and canary rollout for config changes.
+  </p>
+
+  <p>
+    Schema versioning is the lesson we learned painfully. The config store schema evolved across the first two market rollouts. Services deployed against v1 of the schema consumed fields that v2 renamed or restructured. The compatibility shim we added retroactively was functional but fragile. The fix is to treat config schema changes exactly like API changes: they are versioned, backward-compatible by default, and breaking changes require an explicit migration with a deprecation window.
+  </p>
+
+<pre><span class="comment">// Config schema versioning — services declare the version they support</span>
+<span class="keyword">data class</span> <span class="type">MarketConfig</span>(
+    <span class="keyword">val</span> schemaVersion : <span class="type">Int</span>,           <span class="comment">// consumers pin to a version</span>
+    <span class="keyword">val</span> marketId       : <span class="type">String</span>,
+    <span class="keyword">val</span> currencyCode   : <span class="type">String</span>,
+    <span class="keyword">val</span> roundingRule   : <span class="type">RoundingRule</span>,
+    <span class="keyword">val</span> dayCountConvention : <span class="type">DayCount</span>,
+    <span class="keyword">val</span> defaultTenureMonths : <span class="type">Int</span>,
+    <span class="keyword">val</span> settlementWindowMs  : <span class="type">Long</span>,    <span class="comment">// per-rail SLA tolerance</span>
+    <span class="keyword">val</span> delinquencyPolicy   : <span class="type">DelinquencyPolicy</span>,
+    <span class="keyword">val</span> railAdapterId       : <span class="type">String</span>,
+    <span class="keyword">val</span> stateTableExtensions: <span class="type">List</span>&lt;<span class="type">StateExtension</span>&gt;  <span class="comment">// RESTRUCTURED, HOLD, etc.</span>
+)
+
+<span class="comment">// Canary rollout — new config version serves N% of loans before full promotion</span>
+<span class="keyword">fun</span> <span class="type">resolveConfig</span>(marketId: <span class="type">String</span>, loanId: <span class="type">String</span>): <span class="type">MarketConfig</span> {
+    <span class="keyword">val</span> canary = configStore.getCanary(marketId)
+    <span class="keyword">if</span> (canary != <span class="keyword">null</span> && stableHash(loanId) % <span class="number">100</span> < canary.rolloutPct) {
+        <span class="keyword">return</span> canary.config   <span class="comment">// deterministic per loan, not per request</span>
+    }
+    <span class="keyword">return</span> configStore.getStable(marketId)
+}</pre>
+
+  <p>
+    The canary rollout detail is load-bearing. Config changes in a financial platform are not code changes, but they carry the same risk — a misconfigured delinquency threshold or rounding rule affects every loan in a market. Rolling out a config change to 5% of loans, observing ledger reconciliation and state transition metrics for 24 hours, then promoting to 100% is the same discipline as a code canary. The hash on `loanId` rather than on a random seed ensures the same loan always sees the same config version during rollout — preventing a loan from being processed under v1 and then v2 for the same repayment event.
+  </p>
+
+  <h3>Transactional outbox: decoupling rail integration from event publication</h3>
+
+  <p>
+    The naive payment integration architecture: the rail adapter receives a settlement event, writes to the loan database, then publishes to the event bus. This is a dual-write. If the database write succeeds and the event bus publish fails, the loan state is updated but no downstream service — reconciliation, delinquency scoring, audit log — knows it happened. The system is silently inconsistent.
+  </p>
+
+  <p>
+    The standard solution is the transactional outbox pattern. The rail adapter writes the payment event to an outbox table in the same database transaction as the loan update. A separate relay process reads unprocessed outbox rows and publishes them to the event bus, marking them processed on acknowledgement. The loan state update and the event publication are now atomic — either both happen, or neither does.
+  </p>
+
+<pre><span class="comment">// Transactional outbox — atomic loan update + event publication</span>
+<span class="keyword">fun</span> <span class="type">handleSettlementEvent</span>(event: <span class="type">SettlementEvent</span>) = db.transaction {
+    <span class="comment">// Both writes in the same transaction — no dual-write risk</span>
+    loanRepo.markPaymentReceived(event.loanId, event.amount, event.settledAt)
+
+    outboxRepo.insert(
+        <span class="type">OutboxEntry</span>(
+            aggregateId  = event.loanId,
+            eventType    = <span class="string">"PAYMENT_SETTLED"</span>,
+            payload      = event.toJson(),
+            idempotencyKey = event.providerRef,   <span class="comment">// dedup across relay retries</span>
+            createdAt    = Instant.now()
+        )
+    )
+    <span class="comment">// Transaction commits. Relay picks up outbox row and publishes to event bus.</span>
+    <span class="comment">// If relay fails, it retries from the outbox — loan state is already correct.</span>
+}
+
+<span class="comment">// Relay: at-least-once publish with idempotency key on the consumer side</span>
+<span class="keyword">fun</span> <span class="type">relayLoop</span>() {
+    outboxRepo.findUnprocessed(batchSize = <span class="number">100</span>).forEach { entry ->
+        <span class="keyword">val</span> published = eventBus.publishIdempotent(
+            topic          = <span class="string">"loan-events.${entry.marketId}"</span>,
+            key            = entry.aggregateId,    <span class="comment">// partition by loan</span>
+            payload        = entry.payload,
+            idempotencyKey = entry.idempotencyKey
+        )
+        <span class="keyword">if</span> (published) outboxRepo.markProcessed(entry.id)
+    }
+}</pre>
+
+  <p>
+    The outbox pattern shifts the failure surface from "atomic dual-write" — which cannot be made safe — to "at-least-once relay with idempotent consumer" — which can. Downstream consumers handle duplicate events via the idempotency key. The event bus sees each settlement event at least once, and consumers discard duplicates. The loan database is always the source of truth; the event bus is its durable projection.
+  </p>
+
+  <h3>Distributed saga: financial correctness across service boundaries</h3>
+
+  <p>
+    Processing a repayment spans multiple services: reconciliation verifies the amount, the ledger service records the entry, the loan service transitions the state, and the delinquency service rescores. In a monolith, these are sequential steps in a single database transaction. In a distributed system, they are separate network calls that can fail at any point.
+  </p>
+
+  <p>
+    A local database transaction cannot span service boundaries. The distributed alternative is a saga — a sequence of local transactions, each of which publishes an event that triggers the next step. If a step fails, compensating transactions undo the preceding steps.
+  </p>
+
+<pre><span class="comment">// Saga definition — each step owns its local transaction + compensation</span>
+<span class="keyword">val</span> repaymentSaga = saga {
+    step(
+        execute     = { reconciliationSvc.applyRepayment(it) },
+        compensate  = { reconciliationSvc.reverseRepayment(it) }
+    )
+    step(
+        execute     = { ledgerSvc.recordEntry(it) },
+        compensate  = { ledgerSvc.reverseEntry(it) }    <span class="comment">// accounting contra-entry</span>
+    )
+    step(
+        execute     = { loanSvc.transitionState(it) },
+        compensate  = { loanSvc.revertTransition(it) }
+    )
+    step(
+        execute     = { delinquencySvc.rescore(it) },
+        compensate  = { <span class="comment">/* rescore is idempotent — no compensation needed */</span> }
+    )
+}
+
+<span class="comment">// Saga orchestrator persists progress — resumable after crash</span>
+<span class="keyword">fun</span> <span class="type">executeSaga</span>(sagaId: <span class="type">String</span>, event: <span class="type">PaymentEvent</span>) {
+    <span class="keyword">val</span> state = sagaStore.getOrCreate(sagaId)
+    repaymentSaga.resume(state, event)   <span class="comment">// picks up from last completed step</span>
+}</pre>
+
+  <p>
+    The saga store is the correctness guarantee. Every step completion and every compensation is written to the saga store before the next step executes. If the orchestrator crashes mid-saga, it resumes from the last persisted checkpoint. A repayment event that crashes between ledger write and loan state transition will, on recovery, either complete the transition or reverse the ledger entry — never leave both services in divergent states.
+  </p>
+
+  <div class="callout">
+    The compensation for a ledger write is not a delete — it is an accounting contra-entry. Deleting a ledger row violates audit requirements in every market we operate in. The compensating transaction produces a new row that exactly offsets the original, preserving the complete financial history. This distinction — between technical rollback and accounting reversal — is one that most distributed systems literature ignores because it is domain-specific.
+  </div>
+
+  <h3>Event sourcing: loan state as a deterministic function of its history</h3>
+
+  <p>
+    In a conventional architecture, the loan record is mutable state. The current balance, current status, and current payment schedule are columns in a table that gets updated in place. This is operationally simple and produces a correctness problem: given the current state, you cannot reconstruct how you got there. When a regulator asks "show me every state transition for this loan from origination to closure", the answer requires log reconstruction — a forensic exercise that is imprecise by construction.
+  </p>
+
+  <p>
+    We model the loan as an event-sourced aggregate. The append-only event log is the source of truth. The current loan state — the projection — is derived by replaying the event stream from the beginning. Read paths query the projection; write paths append an event and update the projection.
+  </p>
+
+<pre><span class="comment">// Event-sourced loan aggregate — state is a pure function of events</span>
+<span class="keyword">data class</span> <span class="type">Loan</span>(
+    <span class="keyword">val</span> loanId       : <span class="type">String</span>,
+    <span class="keyword">val</span> state        : <span class="type">LoanState</span>,
+    <span class="keyword">val</span> outstandingBalance : <span class="type">Money</span>,
+    <span class="keyword">val</span> version      : <span class="type">Long</span>           <span class="comment">// monotonic event sequence number</span>
+)
+
+<span class="keyword">fun</span> <span class="type">apply</span>(loan: <span class="type">Loan</span>, event: <span class="type">LoanEvent</span>): <span class="type">Loan</span> = <span class="keyword">when</span> (event) {
+    <span class="keyword">is</span> <span class="type">PaymentSettled</span>  -> loan.copy(
+        outstandingBalance = loan.outstandingBalance - event.amount,
+        state              = <span class="keyword">if</span> (loan.outstandingBalance == event.amount) <span class="type">LoanState</span>.CLOSED
+                             <span class="keyword">else</span> loan.state,
+        version            = event.sequenceNumber
+    )
+    <span class="keyword">is</span> <span class="type">OverdueThresholdCrossed</span> -> loan.copy(
+        state   = <span class="type">LoanState</span>.DELINQUENT,
+        version = event.sequenceNumber
+    )
+    <span class="comment">// All transitions are pure functions — no side effects, fully testable</span>
+}
+
+<span class="comment">// Audit replay — reconstruct any point-in-time state for regulator queries</span>
+<span class="keyword">fun</span> <span class="type">replayAt</span>(loanId: <span class="type">String</span>, asOf: <span class="type">Instant</span>): <span class="type">Loan</span> =
+    eventStore
+        .streamEvents(loanId)
+        .takeWhile { it.occurredAt <= asOf }
+        .fold(Loan.empty(loanId), ::apply)</pre>
+
+  <p>
+    The audit replay function is load-bearing infrastructure, not an analytics convenience. When a regulator queries a disputed loan in Indonesia and asks for its state at a specific timestamp, `replayAt` produces a deterministic answer from the immutable event log — not a reconstruction from a mutable table's change history. The event log is stored with WORM retention; once written, events cannot be modified or deleted. The projection can be rebuilt at any time from scratch.
+  </p>
+
+  <p>
+    The version field on the loan aggregate is the optimistic concurrency control mechanism. A state transition event carries the version it was generated from. If two events are generated concurrently from the same version, only one can be appended — the second fails with a version conflict and must be retried. This makes concurrent write races structurally detectable rather than silently corrupting state.
+  </p>
+
+  <h3>Saga + event sourcing: the interaction that matters</h3>
+
+  <p>
+    Running saga orchestration on top of an event-sourced aggregate produces a correctness guarantee that neither provides alone. The saga ensures that multi-service operations are atomic or fully compensated. Event sourcing ensures that every state the aggregate passes through is permanently recorded and replayable. Together, they mean that a repayment processed under a degraded rail provider — delayed acknowledgement, retry storm, partial completion — leaves a complete, auditable, reversible trail regardless of what failed and when.
+  </p>
+
+  <p>
+    The failure mode that exposed this most sharply in production: a GCash settlement event arrived, the saga began, the ledger write succeeded, and the loan state transition service timed out. The saga compensated — reversed the ledger entry. Twenty seconds later, GCash retried the settlement event. The outbox relay published it again. The saga re-executed from scratch. This time all steps completed. The event log shows: PAYMENT_SETTLED attempt 1, COMPENSATION_APPLIED, PAYMENT_SETTLED attempt 2, SUCCESS. The loan state is correct. The audit trail is complete. No manual intervention was required.
+  </p>
+
+  <h2>The Latency Budget Model</h2>
+
+  <p>
+    A lending lifecycle system is not a real-time scoring pipeline — the latency SLA is measured in seconds for reconciliation, not milliseconds. But the principle of owned per-stage latency budgets applies equally. Without explicit budgets, latency regressions are invisible until they cascade. A slow ledger write delays saga completion, which delays delinquency scoring, which delays automated collection workflows during peak repayment periods — a compounding effect that shows up as unexplained collection lag, not as a latency alert.
+  </p>
+
+  <div class="latency-budget">
+    <div class="lb-title">Per-stage latency budgets — P99 targets, enforced with circuit breakers</div>
+    <div class="lb-row">
+      <div class="lb-stage">Rail adapter → outbox write</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:4%"></div></div>
+      <div class="lb-val">50ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Outbox relay → event bus</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:6%"></div></div>
+      <div class="lb-val">200ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Reconciliation step</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:10%"></div></div>
+      <div class="lb-val">300ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Ledger write step</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:10%"></div></div>
+      <div class="lb-val">300ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Loan state transition</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:8%"></div></div>
+      <div class="lb-val">250ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Delinquency rescore</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:8%"></div></div>
+      <div class="lb-val">250ms</div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-stage">Audit event write</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:3%"></div></div>
+      <div class="lb-val">async</div>
+    </div>
+    <div class="lb-total">
+      <div class="lb-total-label">Total P99 (settlement → consistent state)</div>
+      <div class="lb-total-val">&lt; 2s</div>
+    </div>
+  </div>
+
+  <p>
+    The audit event write is deliberately async. Every other step in the saga is on the critical path — a customer who made a repayment should see their loan reflect it within two seconds. The audit log is not. Writing to the WORM event store synchronously on every saga step adds latency on the critical path without improving correctness: the event store's write-ahead log already guarantees durability. The audit write is fire-and-forget with its own retry queue, never blocking saga completion.
+  </p>
+
+  <h2>A Non-Obvious Production Problem: The Delayed Settlement Cascade</h2>
+
+  <p>
+    The failure mode that cost the most debugging time was not a component failure — it was an emergent interaction between three independently correct subsystems.
+  </p>
+
+  <p>
+    The sequence: a customer repays via GCash. GCash sends an acknowledgement immediately — payment accepted, pending settlement. Normally, settlement completes in seconds. Under GCash's peak load on a Friday evening, settlement is delayed by 47 minutes. During those 47 minutes, the delinquency scoring pipeline runs its scheduled sweep. The loan's overdue age crosses the threshold. The pipeline triggers an automated collection workflow — an SMS to a customer who has already paid.
+  </p>
+
+  <p>
+    Each subsystem was individually correct. The outbox relay was working. The delinquency pipeline was reading accurate loan state. The collection workflow was following its configured policy. The problem was a missing synchronisation point: the delinquency pipeline had no visibility into the settlement window state maintained by the reconciliation service.
+  </p>
+
+  <p>
+    The fix introduces a settlement window gate as an explicit stage between the delinquency scorer and the collection trigger. The gate reads the pending payment flag from the reconciliation service, checks it against the market-configured settlement window tolerance, and suppresses collection triggers for loans within tolerance. Loans that exceed the tolerance — where a settlement signal is genuinely overdue — are routed to manual review rather than automated collection.
+  </p>
+
+<pre><span class="comment">// Settlement window gate — explicit synchronisation between subsystems</span>
+<span class="keyword">fun</span> <span class="type">evaluateCollectionTrigger</span>(loan: <span class="type">Loan</span>): <span class="type">CollectionDecision</span> {
+    <span class="keyword">val</span> config = configStore.resolve(loan.marketId)
+
+    <span class="comment">// Check reconciliation service for pending settlement state</span>
+    <span class="keyword">val</span> pendingPayment = reconciliationSvc.getPendingPayment(loan.loanId)
+
+    <span class="keyword">if</span> (pendingPayment != <span class="keyword">null</span>) {
+        <span class="keyword">val</span> age = Duration.between(pendingPayment.acceptedAt, Instant.now())
+
+        <span class="keyword">return when</span> {
+            age < config.settlementWindowMs ->
+                <span class="comment">// Within SLA window — provider is expected to settle. Do nothing.</span>
+                <span class="type">CollectionDecision</span>.SUPPRESS
+
+            age < config.settlementWindowMs * <span class="number">3</span> ->
+                <span class="comment">// Past SLA but within escalation window — human review, not auto-collect</span>
+                <span class="type">CollectionDecision</span>.ESCALATE_TO_REVIEW
+
+            <span class="keyword">else</span> ->
+                <span class="comment">// Provider has materially failed to settle — treat as non-payment</span>
+                <span class="type">CollectionDecision</span>.INITIATE_COLLECTION
+        }
+    }
+
+    <span class="keyword">return</span> delinquencySvc.score(loan, config.delinquencyPolicy)
+        .toCollectionDecision()
+}</pre>
+
+  <p>
+    The settlement window tolerance is per-market configuration — GCash in the Philippines has a materially different SLA profile than UPI in India. UPI settlements clear in under 30 seconds under normal conditions; GCash has a documented P99 of several minutes during peak load. Treating these identically would either produce excessive false-positive collection triggers for the Philippines or insufficient coverage for India. The config resolution at this stage is the same pattern used everywhere in the platform — the gate has no hardcoded market awareness.
+  </p>
+
+  <p>
+    The broader lesson: in a distributed system with multiple independently-scheduled pipelines, the interactions between pipelines are a class of failure that does not appear in unit tests, integration tests, or load tests. They require explicit system-level design — identifying every point where two pipelines share state and inserting a synchronisation contract. The settlement window gate is that contract between the reconciliation pipeline and the collection pipeline.
+  </p>
+
+  <h2>Chaos Engineering as a Design Requirement</h2>
+
+  <p>
+    The delayed settlement cascade was discovered in production. It should have been discovered in staging. The reason it was not: the staging environment did not simulate adversarial provider behaviour. The GCash integration was tested against a mock that returned settlement immediately. Real-world rail behaviour — delayed acknowledgement, duplicate delivery, out-of-order events, provider timeouts — was not part of the test surface.
+  </p>
+
+  <p>
+    After this incident, we made chaos engineering a design requirement rather than an operational exercise. Every rail integration ships with a corresponding fault injection profile — a set of failure scenarios that the staging environment exercises on a scheduled basis before any production deployment.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Fault scenario</th><th>What it tests</th><th>Target subsystem</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Settlement delayed N minutes</td>
+          <td>Settlement window gate suppresses collection triggers correctly</td>
+          <td>Delinquency pipeline</td>
+        </tr>
+        <tr>
+          <td>Duplicate settlement event</td>
+          <td>Idempotency key prevents double ledger entry</td>
+          <td>Outbox relay + reconciliation</td>
+        </tr>
+        <tr>
+          <td>Out-of-order events (settlement before acknowledgement)</td>
+          <td>Event sequence validation; saga handles unexpected order</td>
+          <td>Saga orchestrator</td>
+        </tr>
+        <tr>
+          <td>Ledger service timeout mid-saga</td>
+          <td>Compensation reverses reconciliation; retry completes cleanly</td>
+          <td>Saga compensating transactions</td>
+        </tr>
+        <tr>
+          <td>Config store unavailable</td>
+          <td>Services fall back to last-known-good config; alert fires</td>
+          <td>Config resolution layer</td>
+        </tr>
+        <tr>
+          <td>Event store write latency spike</td>
+          <td>Audit write stays async; saga P99 unaffected</td>
+          <td>Latency budget isolation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The config store unavailability scenario deserves elaboration. Services cache their resolved market config with a short TTL. When the config store is unreachable, they serve from cache rather than failing the request. This is intentional — a config store outage should not take down loan processing. But it introduces a risk: if a config change is in flight when the outage occurs, some services will have the new config and others will have the old. The chaos test exercises this split-brain scenario explicitly, verifying that the canary hash on loan ID keeps each individual loan consistently on one config version regardless of which service is handling it.
+  </p>
+
+  <h2>Summary of Key Decisions</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Decision</th><th>Option chosen</th><th>Rationale</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Config versioning</td>
+          <td>Schema registry + versioned contracts + canary rollout</td>
+          <td>Config changes carry the same production risk as code changes; they require the same deployment discipline</td>
+        </tr>
+        <tr>
+          <td>Event publication</td>
+          <td>Transactional outbox pattern</td>
+          <td>Eliminates dual-write; loan DB write and event publication are atomic or neither occurs</td>
+        </tr>
+        <tr>
+          <td>Multi-service correctness</td>
+          <td>Saga orchestration with compensating transactions</td>
+          <td>Distributed transactions are unavailable; saga provides atomic-or-compensated guarantee across service boundaries</td>
+        </tr>
+        <tr>
+          <td>Ledger compensation</td>
+          <td>Accounting contra-entry, not row deletion</td>
+          <td>Regulatory audit requirements in all four markets prohibit deleting financial records</td>
+        </tr>
+        <tr>
+          <td>Loan state model</td>
+          <td>Event sourcing with append-only log</td>
+          <td>Deterministic audit replay from event history; mutable state cannot satisfy regulatory reconstruction requirements</td>
+        </tr>
+        <tr>
+          <td>Concurrent write safety</td>
+          <td>Optimistic concurrency via event sequence version</td>
+          <td>Makes concurrent transition races structurally detectable; no silent corruption</td>
+        </tr>
+        <tr>
+          <td>Collection trigger safety</td>
+          <td>Settlement window gate as explicit synchronisation</td>
+          <td>Pipeline interaction failures are invisible without explicit synchronisation contracts between independently-scheduled subsystems</td>
+        </tr>
+        <tr>
+          <td>Resilience validation</td>
+          <td>Fault injection profiles per rail integration</td>
+          <td>Adversarial provider behaviour is not discoverable through standard integration testing; it requires explicit simulation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>What We Would Do Differently</h2>
+
+  <div class="lessons">
+    <div class="lesson">
+      <div class="lesson-num">01</div>
+      <div class="lesson-body">
+        <div class="lesson-title">Ship the saga store and DLQ tooling before going live — not after.</div>
+        <p>Saga failures and unreconcilable outbox events surfaced in production before the operational tooling to inspect, replay, and resolve them was ready. In a financial system, a stuck saga is not a background concern — it represents a loan in an inconsistent state. The replay and resolution tooling should be a launch gate, not a follow-up. We now treat it as a first-class deliverable alongside the saga itself.</p>
+      </div>
+    </div>
+    <div class="lesson">
+      <div class="lesson-num">02</div>
+      <div class="lesson-body">
+        <div class="lesson-title">Define config schema contracts before the first service ships against them.</div>
+        <p>The compatibility shim we added after the v1→v2 config schema migration was a three-week engineering engagement that should have been unnecessary. Schema-first design — agree the contract, version it, write the migration path — before any consumer is deployed costs two days. Retrofitting it costs twenty. The rule we now enforce: no service ships against a config schema that does not have a documented versioning strategy.</p>
+      </div>
+    </div>
+    <div class="lesson">
+      <div class="lesson-num">03</div>
+      <div class="lesson-body">
+        <div class="lesson-title">Model pipeline interactions as first-class design artifacts.</div>
+        <p>The delayed settlement cascade was caused by an unmodelled interaction between two independently correct pipelines. The gap was not in either pipeline's design — it was in the system-level design that should have enumerated every shared state boundary and inserted an explicit synchronisation contract. We now produce a pipeline interaction map as part of every service design review, identifying all shared state and the contract at each boundary.</p>
+      </div>
+    </div>
+    <div class="lesson">
+      <div class="lesson-num">04</div>
+      <div class="lesson-body">
+        <div class="lesson-title">Instrument saga step latency and compensation rate as primary metrics.</div>
+        <p>We added saga observability reactively — after a compensation storm from a degraded ledger service was invisible in our dashboards for 18 minutes. The compensation rate is one of the highest-signal metrics in a saga-based system: a spike indicates either a downstream service degradation or a correctness problem in the saga definition itself. It should be on the primary ops dashboard from day one, with an alert set at 2× baseline.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Conclusion</h2>
+
+  <p>
+    The dominant constraint in financial infrastructure is not throughput — it is correctness under failure. A lending platform that processes repayments correctly 99.9% of the time and double-books 0.1% of the time is not a 99.9% correct system. It is a system with a correctness bug that surfaces on a schedule determined by transaction volume.
+  </p>
+
+  <p>
+    The architecture described here — transactional outbox, saga orchestration with compensating transactions, event sourcing with deterministic replay, settlement window gating — is not sophisticated for its own sake. Each component exists to close a specific correctness gap. The outbox eliminates dual-write. The saga eliminates partial multi-service state. Event sourcing eliminates audit reconstruction ambiguity. The settlement gate eliminates pipeline interaction failures. Removing any one of them reintroduces the gap it was designed to close.
+  </p>
+
+  <p>
+    The broader principle: in a distributed financial system, correctness is a property of the interaction between components, not of any individual component. A reconciliation service that is correct in isolation, a delinquency pipeline that is correct in isolation, and a collection service that is correct in isolation can collectively produce an incorrect outcome — as they did, until we modelled their interaction explicitly. Designing for correctness at the system level, not the service level, is the engineering discipline that separates platforms that hold up from platforms that require constant firefighting.
+  </p>
+
+</div>
+
+<footer>
+  <div>© Utkarsh Mehrotra</div>
+  <div class="footer-links">
+    <a href="https://utm-git.github.io/utkarshmehrotra/">Portfolio</a>
+    <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+    <a href="https://github.com/utm-git">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>
