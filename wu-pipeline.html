@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecting a 10M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #111;
+    --ink2: #333;
+    --ink3: #666;
+    --ink4: #999;
+    --bg: #fff;
+    --bg2: #f7f8fa;
+    --bg3: #f0f1f3;
+    --border: #e4e5e7;
+    --accent: #0055d4;
+    --mono-bg: #0f1117;
+    --mono-fg: #c9d1d9;
+    --mono-comment: #6a9f6a;
+    --mono-key: #f9c784;
+    --mono-str: #9ecbff;
+  }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page shell ── */
+  .page { max-width: 760px; margin: 0 auto; padding: 0 32px 80px; }
+
+  /* ── Header ── */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  .site-header a {
+    font-size: 0.8rem;
+    color: var(--ink3);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .site-header a:hover { color: var(--ink); }
+  .header-sep { color: var(--border); }
+
+  /* ── Article header ── */
+  .article-header { padding: 52px 0 40px; border-bottom: 1px solid var(--border); }
+  .category-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4vw, 2.3rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--ink3);
+    line-height: 1.65;
+    margin-bottom: 28px;
+    max-width: 680px;
+  }
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.83rem;
+    color: var(--ink4);
+  }
+  .byline-author { font-weight: 600; color: var(--ink2); }
+  .byline-dot { color: var(--border); }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 40px 0 48px;
+    overflow: hidden;
+    background: var(--bg2);
+  }
+  .stat {
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--ink4);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Body ── */
+  article { padding-top: 8px; }
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 52px 0 14px;
+    padding-top: 4px;
+  }
+  h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin: 36px 0 10px;
+  }
+  p {
+    font-size: 0.97rem;
+    color: var(--ink2);
+    margin-bottom: 1.1rem;
+    line-height: 1.78;
+  }
+  strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #c7254e;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Callout ── */
+  .callout {
+    background: var(--bg2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 18px 22px;
+    margin: 32px 0;
+  }
+  .callout p {
+    font-size: 0.97rem;
+    color: var(--ink2);
+    margin: 0;
+    line-height: 1.65;
+    font-style: italic;
+  }
+
+  /* ── Code block ── */
+  .code-block {
+    background: var(--mono-bg);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--mono-fg);
+    margin: 0;
+    white-space: pre;
+  }
+  .code-block .cm  { color: var(--mono-comment); }
+  .code-block .kw  { color: var(--mono-key); }
+  .code-block .st  { color: var(--mono-str); }
+  .code-block .fn  { color: #79c0ff; }
+
+  /* ── Diagram ── */
+  .diagram-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px 20px 20px;
+    margin: 32px 0;
+    overflow-x: auto;
+  }
+  .diagram-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--ink4);
+    text-align: center;
+    margin-top: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Lessons ── */
+  .lessons { list-style: none; margin: 16px 0 24px; }
+  .lessons li {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.93rem;
+    color: var(--ink2);
+    line-height: 1.65;
+    align-items: start;
+  }
+  .lessons li:last-child { border-bottom: none; }
+  .lessons li .n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+
+  /* ── Decision table ── */
+  .decision-table { width: 100%; border-collapse: collapse; margin: 20px 0 32px; font-size: 0.87rem; }
+  .decision-table th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink4);
+    padding: 8px 14px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+  .decision-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink2);
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  .decision-table tr:last-child td { border-bottom: none; }
+  .decision-table td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+
+  /* ── Footer ── */
+  .article-footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 0 0;
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .article-footer p { font-size: 0.8rem; color: var(--ink4); margin: 0; }
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a { font-size: 0.8rem; color: var(--ink4); }
+  .footer-links a:hover { color: var(--ink); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="site-header">
+    <div style="display:flex;gap:20px">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Home</a>
+      <span class="header-sep">·</span>
+      <a href="https://utm-git.github.io/utkarshmehrotra/#writing">Writing</a>
+    </div>
+    <div style="display:flex;gap:16px">
+      <a href="https://github.com/utm-git">GitHub</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+    </div>
+  </header>
+
+  <div class="article-header">
+    <span class="category-label">Engineering · Fraud Detection · Stream Processing</span>
+    <h1>Architecting a 10M Events/Day Fraud Detection Pipeline: Tradeoffs &amp; Lessons</h1>
+    <p class="subtitle">How we redesigned Western Union's fraud infrastructure from a batch-oriented system to a sub-second streaming pipeline — the architectural decisions, failure modes, and what we would do differently.</p>
+    <div class="byline">
+      <span class="byline-author">Utkarsh Mehrotra</span>
+      <span class="byline-dot">·</span>
+      <span>Chief Engineer, Samsung Electronics</span>
+      <span class="byline-dot">·</span>
+      <span>Ex–Western Union</span>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num">10M+</div><div class="stat-label">Events per day</div></div>
+    <div class="stat"><div class="stat-num">&lt;1s</div><div class="stat-label">End-to-end P99</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Stream types unified</div></div>
+  </div>
+
+  <article>
+
+    <h2>Background</h2>
+
+    <p>Before this system existed, Western Union's fraud analytics team operated under a structural constraint that no amount of hiring or process improvement could fix: the minimum time between a new fraud pattern being identified and a rule being live in production was measured in weeks. A coordinated mule-network attack discovered on a Monday — where funds move through chains of accounts before exiting the system — would continue operating unimpeded until the next sprint boundary, at minimum. During active fraud campaigns, that exposure window translated directly into unrecoverable losses.</p>
+
+    <p>The root cause was architectural. Risk scoring ran on a pull-based batch cycle against a transaction database. By the time a pattern surfaced, the funds had settled and the counterparty accounts were empty. The fraud team had deep expertise in pattern recognition; they had no mechanism to act on that expertise in time. Every intervention was remediation. The business question that drove this project was not "how do we improve latency" — it was "how do we give the fraud team a system that operates at the speed of attacks rather than the speed of sprint cycles."</p>
+
+    <p>This post describes the streaming pipeline we built to answer that question: the architecture, the specific decisions that shaped it, the second-order failure modes we did not anticipate, and what we would change.</p>
+
+    <h2>System Requirements</h2>
+
+    <p>Before discussing the architecture, it is worth being explicit about the constraints that shaped every decision:</p>
+
+    <ul class="lessons">
+      <li><span class="n">R1</span><div><strong>Pre-settlement intervention.</strong> Fraud scoring must complete and produce an actionable signal before the transaction settles. Post-settlement flagging is operationally valuable but not the primary goal of this system.</div></li>
+      <li><span class="n">R2</span><div><strong>Sub-second end-to-end latency.</strong> P99 latency across the full pipeline — ingest through action — must remain under one second at sustained load.</div></li>
+      <li><span class="n">R3</span><div><strong>No event loss under failure.</strong> Dropping a transactional event is not a data quality issue in this domain — it is a compliance failure. The system must guarantee event durability under partial failures.</div></li>
+      <li><span class="n">R4</span><div><strong>Cross-stream correlation.</strong> A payment event in isolation is often insufficient to make a reliable fraud determination. The system must correlate transactional signals with behavioral and authentication events for the same user within a time window.</div></li>
+    </ul>
+
+    <h2>Architecture Overview</h2>
+
+    <p>The pipeline is structured as three distinct layers: ingest, process, and act. Each layer has a clear ownership boundary and a defined latency budget. The diagram below shows the full topology.</p>
+
+    <div class="diagram-wrap">
+      <svg width="100%" viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#0055d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#aaa" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <text x="30" y="26" font-size="9" fill="#999" letter-spacing="1.5" font-weight="600">INGEST</text>
+        <text x="222" y="26" font-size="9" fill="#999" letter-spacing="1.5" font-weight="600">STREAM BUS</text>
+        <text x="350" y="26" font-size="9" fill="#999" letter-spacing="1.5" font-weight="600">PROCESS</text>
+        <text x="530" y="26" font-size="9" fill="#999" letter-spacing="1.5" font-weight="600">ACT</text>
+
+        <rect x="20" y="40" width="138" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="89" y="53" font-size="9" fill="#333" text-anchor="middle" font-weight="500">Transactional events</text>
+        <text x="89" y="66" font-size="8" fill="#888" text-anchor="middle">payments · transfers</text>
+
+        <rect x="20" y="84" width="138" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="89" y="97" font-size="9" fill="#333" text-anchor="middle" font-weight="500">Behavioural events</text>
+        <text x="89" y="110" font-size="8" fill="#888" text-anchor="middle">login · device · session</text>
+
+        <rect x="20" y="128" width="138" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="89" y="141" font-size="9" fill="#333" text-anchor="middle" font-weight="500">Auth events</text>
+        <text x="89" y="154" font-size="8" fill="#888" text-anchor="middle">MFA · session anomalies</text>
+
+        <rect x="182" y="48" width="80" height="110" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.8"/>
+        <text x="222" y="95" font-size="9" fill="#79c0ff" text-anchor="middle" font-weight="500">Kafka</text>
+        <text x="222" y="110" font-size="8" fill="#484f58" text-anchor="middle">partitioned</text>
+        <text x="222" y="122" font-size="8" fill="#484f58" text-anchor="middle">by user_id</text>
+        <text x="222" y="134" font-size="8" fill="#484f58" text-anchor="middle">durable</text>
+
+        <line x1="158" y1="57" x2="180" y2="78" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+        <line x1="158" y1="101" x2="180" y2="103" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+        <line x1="158" y1="145" x2="180" y2="128" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+
+        <rect x="286" y="48" width="130" height="48" rx="4" fill="#f7f8fa" stroke="#0055d4" stroke-width="1"/>
+        <text x="351" y="68" font-size="9" fill="#111" text-anchor="middle" font-weight="600">Flink</text>
+        <text x="351" y="82" font-size="8" fill="#666" text-anchor="middle">join · sessionise · enrich</text>
+
+        <rect x="286" y="108" width="130" height="48" rx="4" fill="#f7f8fa" stroke="#0055d4" stroke-width="1"/>
+        <text x="351" y="128" font-size="9" fill="#111" text-anchor="middle" font-weight="600">Spark Streaming</text>
+        <text x="351" y="142" font-size="8" fill="#666" text-anchor="middle">rule eval · scoring</text>
+
+        <line x1="262" y1="82" x2="284" y2="72" stroke="#0055d4" stroke-width="0.9" marker-end="url(#arr)"/>
+        <line x1="262" y1="103" x2="284" y2="132" stroke="#0055d4" stroke-width="0.9" marker-end="url(#arr)"/>
+
+        <rect x="286" y="172" width="130" height="42" rx="4" fill="#0f1117" stroke="#30363d" stroke-width="0.8"/>
+        <text x="351" y="190" font-size="9" fill="#79c0ff" text-anchor="middle" font-weight="500">ML Scoring API</text>
+        <text x="351" y="204" font-size="8" fill="#484f58" text-anchor="middle">async · non-blocking</text>
+        <line x1="351" y1="156" x2="351" y2="170" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+
+        <rect x="444" y="40" width="140" height="34" rx="4" fill="#fff0f0" stroke="#e88"/>
+        <text x="514" y="53" font-size="9" fill="#a00" text-anchor="middle" font-weight="600">Block pre-settlement</text>
+        <text x="514" y="67" font-size="8" fill="#c66" text-anchor="middle">highest confidence signals</text>
+
+        <rect x="444" y="84" width="140" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="514" y="97" font-size="9" fill="#333" text-anchor="middle" font-weight="500">Review queue</text>
+        <text x="514" y="111" font-size="8" fill="#888" text-anchor="middle">DLQ + analyst workflow</text>
+
+        <rect x="444" y="128" width="140" height="34" rx="4" fill="#f7f8fa" stroke="#e4e5e7" stroke-width="0.8"/>
+        <text x="514" y="141" font-size="9" fill="#333" text-anchor="middle" font-weight="500">Observability sink</text>
+        <text x="514" y="155" font-size="8" fill="#888" text-anchor="middle">Prometheus · structured logs</text>
+
+        <line x1="416" y1="72" x2="442" y2="57" stroke="#0055d4" stroke-width="0.9" marker-end="url(#arr)"/>
+        <line x1="416" y1="132" x2="442" y2="101" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+        <line x1="416" y1="145" x2="442" y2="145" stroke="#ccc" stroke-width="0.8" marker-end="url(#arr2)"/>
+
+        <line x1="20" y1="250" x2="590" y2="250" stroke="#e4e5e7" stroke-width="0.6"/>
+        <text x="20"  y="268" font-size="8" fill="#0055d4" font-weight="500">T+0ms</text>
+        <text x="180" y="268" font-size="8" fill="#888">T+5ms (ingest)</text>
+        <text x="285" y="268" font-size="8" fill="#888">T+50ms (enrich)</text>
+        <text x="420" y="268" font-size="8" fill="#888">T+800ms (score)</text>
+        <text x="530" y="268" font-size="8" fill="#0055d4" font-weight="500">T&lt;1s ✓</text>
+      </svg>
+      <p class="diagram-label">Figure 1 — Pipeline topology. Three event streams → Kafka → Flink enrichment + Spark rule evaluation → action layer. End-to-end P99 &lt; 1 second.</p>
+    </div>
+
+    <h2>Key Design Decisions</h2>
+
+    <h3>Event bus: Kafka with entity-keyed partitioning</h3>
+
+    <p>We evaluated three approaches to event ingestion before landing on Kafka. The first was direct consumption: Flink subscribes to upstream REST webhooks from the transaction processing system. The second was a managed queue service (AWS SQS). The third was Kafka as a durable log.</p>
+
+    <p>Direct webhook consumption was rejected immediately: REST webhooks provide no durability guarantee. When a downstream Flink job fails and restarts during a traffic spike — which is not a hypothetical — events emitted during that window are permanently lost. In a financial fraud system, lost events are a compliance failure, not a data quality issue. SQS was a closer call: it provides durability and at-least-once delivery, but its lack of consumer-side offset management means you cannot replay from a specific point in the event history, and its maximum retention window of 14 days is insufficient for the audit requirements of this domain. Kafka's durable, replayable, offset-managed log was the only option that satisfied all three non-negotiables: durability, replayability, and consumer-controlled positioning.</p>
+
+    <p>We partition by <code>user_id</code> rather than using default round-robin assignment. This ensures that all events for a given user are processed by the same Flink task manager, making stateful session-level joins possible without cross-partition coordination — which at our throughput would be prohibitively expensive.</p>
+
+    <h3>Processing: Flink for enrichment, Spark for rule evaluation</h3>
+
+    <p>Three processing architectures were evaluated. The first was a unified Flink pipeline handling both enrichment and rule evaluation. The second was Kafka Streams for enrichment with a separate rule execution service. The third was the Flink-plus-Spark split we ultimately deployed.</p>
+
+    <p>The unified Flink approach was appealing from an operational simplicity standpoint — one runtime, one deployment model, one set of runbooks. We built a prototype and benchmarked it. Flink's Table API and SQL layer, while mature, added 40–60ms of overhead to complex analytical rule evaluation that Spark's native execution engine handled in under 10ms. At our latency budget, that gap was not acceptable. Kafka Streams was eliminated early: its stateful join primitives are weaker than Flink's, and its rule evaluation story is essentially non-existent without significant custom development.</p>
+
+    <p>The Flink-plus-Spark split carries real operational cost — two runtimes, two deployment pipelines, two monitoring stacks. That cost is worth it because the performance profiles are genuinely distinct: Flink's credit-based flow control and RocksDB state backend are purpose-built for low-latency stateful streaming; Spark's columnar execution engine and SQL optimiser are purpose-built for analytical batch-like workloads. Using one engine for both means accepting its worst characteristics across half the pipeline.</p>
+
+    <h3>ML integration: asynchronous scoring with deterministic fallback</h3>
+
+    <p>ML scoring is integrated as an asynchronous side-channel from the Spark rule evaluation stage. Making this call synchronous would have added 200–400ms of latency per event — consuming most of the available budget. Instead, we issue the ML scoring request asynchronously and merge the result with rule-engine output before emitting the final risk signal.</p>
+
+    <p>Critically, the system does not depend on the ML service being available. If the scoring service degrades or exceeds its timeout threshold, the pipeline falls back to rule-only scoring. This was not added as an afterthought — it was a day-one design requirement. Any latency-sensitive path that introduces a hard dependency on an external service is a production incident waiting to happen.</p>
+
+    <div class="callout">
+      <p>The architectural constraint that shaped every decision: fraud signals must be produced and acted on before settlement completes, not after. Systems that score post-settlement are forensic tools. This system is a prevention mechanism. Losing sight of this distinction leads to building something technically impressive that solves the wrong problem.</p>
+    </div>
+
+    <h2>Engineering Challenges</h2>
+
+    <h3>Backpressure management at sustained throughput</h3>
+
+    <p>At 10M events/day the pipeline sustains approximately 115 events per second under normal conditions, with significantly higher spikes around monthly pay cycles and international time-zone peaks. Without backpressure control, slowdowns in downstream stages — the ML scoring service, the action layer — cascade upstream through the enrichment layer into Kafka consumer lag, and eventually cause Flink task managers to run out of heap.</p>
+
+    <p>We implemented Flink's credit-based flow control with dynamic parallelism scaling, driven by consumer lag metrics exported to Prometheus. The critical tuning constraint was that backpressure should slow ingestion rather than drop events. Shedding load by dropping events is not an acceptable degradation mode for a financial fraud pipeline.</p>
+
+    <h3>Exactly-once semantics: a deliberate tradeoff</h3>
+
+    <p>We evaluated Flink's exactly-once processing mode, which uses two-phase commit between Flink checkpoints and Kafka producers to guarantee that each event is processed precisely once end-to-end. After benchmarking, we chose at-least-once delivery with idempotent consumers instead.</p>
+
+    <p>Exactly-once mode at our throughput introduced approximately 15% additional latency from two-phase commit coordination — enough to meaningfully compress the available budget for scoring and action dispatch. More importantly, the action layer was already designed to handle duplicate events safely.</p>
+
+    <div class="code-block"><pre><span class="cm">// Idempotent signal handler — correct under at-least-once delivery</span>
+<span class="kw">fun</span> <span class="fn">handleFraudSignal</span>(event: FraudSignal) {
+    <span class="kw">val</span> key = <span class="st">"fraud:${event.txnId}:${event.signalType}"</span>
+    <span class="kw">if</span> (redis.setNX(key, event.score, ttl = 24.hours)) {
+        <span class="cm">// First time we have seen this signal — act on it</span>
+        actionRouter.dispatch(event)
+    }
+    <span class="cm">// Duplicate delivery — already processed, discard</span>
+}</pre></div>
+
+    <p>Blocking a transaction twice is a no-op at the payment rail level. Inserting a duplicate into the analyst review queue is deduplicated at read time. The at-least-once + idempotent consumer pattern eliminates the coordination overhead of exactly-once while maintaining correctness at the application layer.</p>
+
+    <h3>Decoupling rule updates from the deployment cycle</h3>
+
+    <p>Early in the project, fraud analysts were identifying new attack patterns faster than engineering could ship rule updates. A mule-account pattern detected on Monday required a rule live by Tuesday — not at the next sprint boundary. Treating this as a process problem would be the wrong response; it is an architectural problem.</p>
+
+    <p>We externalised rule definitions to a database, hot-loaded by the Spark rule engine on a configurable polling interval. Adding or modifying a rule became a database write owned directly by the fraud analytics team, with no engineering deployment required. Time-to-detection for new fraud patterns dropped from multiple days to under one hour. This single change produced more measurable business impact than any other technical decision in the project.</p>
+
+    <h2>Summary of Key Decisions</h2>
+
+    <table class="decision-table">
+      <thead>
+        <tr><th>Decision</th><th>Option chosen</th><th>Rationale</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Event bus</td><td>Kafka (durable log)</td><td>Replay guarantee under failure; REST webhooks provide no durability</td></tr>
+        <tr><td>Partition key</td><td>user_id</td><td>Enables stateful per-user joins without cross-partition coordination</td></tr>
+        <tr><td>Processing split</td><td>Flink + Spark</td><td>Flink for low-latency stateful joins; Spark for complex rule evaluation</td></tr>
+        <tr><td>ML integration</td><td>Async with fallback</td><td>Synchronous call consumes 200–400ms of latency budget</td></tr>
+        <tr><td>Delivery semantics</td><td>At-least-once + idempotent consumers</td><td>Exactly-once adds ~15% latency overhead from 2PC coordination</td></tr>
+        <tr><td>Rule management</td><td>Database-driven hot reload</td><td>Removes engineering from the detection-to-rule deployment loop</td></tr>
+      </tbody>
+    </table>
+
+    <h2>A Non-Obvious Production Problem: Consumer Group Rebalancing Storms</h2>
+
+    <p>The failure mode we spent the most time debugging in production was one that does not appear in any Flink or Kafka tutorial: consumer group rebalancing storms triggered by task manager restarts under sustained load.</p>
+
+    <p>The sequence was repeatable. A Flink task manager would restart — due to a garbage collection pause, a transient OOM, or a routine deployment — and trigger a Kafka consumer group rebalance. During rebalance, all partition consumption pauses. Under normal conditions this lasts 3–5 seconds. Under sustained load, with consumer lag already accumulating from the restart, the rebalance triggered a secondary condition: Kafka's <code>max.poll.interval.ms</code> was set to its default of 300 seconds, but the time required to process the backlog of accumulated events after the rebalance exceeded that limit. The consumer was marked dead by the group coordinator, triggering another rebalance. The second rebalance caused more lag. The cycle repeated.</p>
+
+    <p>The fix required tuning three interdependent parameters together rather than in isolation:</p>
+
+    <div class="code-block"><pre><span class="cm"># Kafka consumer configuration — tuned for streaming fraud pipeline</span>
+
+<span class="cm"># How long the coordinator waits for a consumer to poll before</span>
+<span class="cm"># declaring it dead. Must exceed max processing time for accumulated lag.</span>
+<span class="kw">max.poll.interval.ms</span> = <span class="st">900000</span>    <span class="cm"># 15 minutes</span>
+
+<span class="cm"># Heartbeat interval must be 1/3 of session timeout per Kafka docs.</span>
+<span class="cm"># Session timeout controls how quickly the coordinator detects a dead consumer.</span>
+<span class="kw">session.timeout.ms</span>   = <span class="st">45000</span>     <span class="cm"># 45 seconds</span>
+<span class="kw">heartbeat.interval.ms</span> = <span class="st">15000</span>    <span class="cm"># 15 seconds</span>
+
+<span class="cm"># Limit records fetched per poll to bound per-poll processing time.</span>
+<span class="cm"># Prevents a single large batch from exhausting the poll interval.</span>
+<span class="kw">max.poll.records</span>     = <span class="st">200</span>        <span class="cm"># down from default 500</span></pre></div>
+
+    <p>The non-obvious insight is that <code>max.poll.interval.ms</code> and <code>max.poll.records</code> must be tuned in relation to each other: if the time to process <code>max.poll.records</code> records can exceed <code>max.poll.interval.ms</code> under backlog conditions, you will rebalance. We derived the safe value for <code>max.poll.records</code> by measuring P99 per-record processing time under peak load, multiplying by the target batch size, and setting <code>max.poll.interval.ms</code> to 3× that value to provide headroom for GC pauses. Once these parameters were co-tuned, the rebalancing storm behaviour disappeared entirely.</p>
+
+    <p>This class of problem — emergent from the interaction between two independently reasonable configuration defaults — is the kind of operational knowledge that only comes from running a system under real load for long enough to observe it. We documented the tuning rationale explicitly in the runbook so that future engineers would understand not just what the values are, but why they are what they are.</p>
+
+
+
+    <ul class="lessons">
+      <li><span class="n">01</span><div><strong>Observability from day one.</strong> The Prometheus metrics layer and structured logging were added in the final weeks of the project. A streaming system at this scale cannot be tuned, debugged, or operated without latency histograms and consumer lag visibility in place from the start. Production readiness is not a milestone — it is a precondition.</div></li>
+      <li><span class="n">02</span><div><strong>Evaluate Flink-only for rule evaluation.</strong> The Flink/Spark split is architecturally sound but operationally expensive: two runtimes, two deployment pipelines, two sets of runbooks. Flink's SQL and Table API have matured significantly. A Flink-only architecture would reduce operational surface area substantially and is worth benchmarking before committing to a two-engine design.</div></li>
+      <li><span class="n">03</span><div><strong>Specify ML circuit-breaker behaviour before writing happy-path code.</strong> The fallback to rule-only scoring when the ML service degrades was added reactively after a staging environment incident. Any external dependency on the critical latency path needs its degraded-mode behaviour specified as a requirement before implementation begins.</div></li>
+      <li><span class="n">04</span><div><strong>Schema registry from day one.</strong> Kafka schemas evolved across the project lifecycle. We ended up with a backward-compatibility shim that functioned but created fragility. Enforcing Avro schemas through Confluent Schema Registry at the producer boundary from the start would have eliminated an entire class of production surprises.</div></li>
+    </ul>
+
+    <h2>Conclusion</h2>
+
+    <p>The shift from batch to streaming fraud detection is not primarily a latency improvement — it is a change in the intervention model. Batch systems are forensic: they identify what happened. Streaming systems are preventive: they enable action before harm occurs. For a company processing high-volume international money movement, this distinction has direct business and regulatory consequences.</p>
+
+    <p>The architecture described here relies on mature, well-understood components: Kafka, Flink, and Spark. The engineering challenge is not in the individual tools but in the compositional decisions — how they are connected, where the ownership boundaries sit, and what constraints each stage is held to. Getting those decisions right, and being honest about the ones that could be improved, is where the real work lies.</p>
+
+  </article>
+
+  <div class="article-footer">
+    <p>© Utkarsh Mehrotra</p>
+    <div class="footer-links">
+      <a href="https://utm-git.github.io/utkarshmehrotra/">Portfolio</a>
+      <a href="https://www.linkedin.com/in/utkarshmehrotra-/">LinkedIn</a>
+      <a href="https://github.com/utm-git">GitHub</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
