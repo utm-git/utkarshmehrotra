@@ -8,14 +8,17 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --ink: #1a1a1a;
-    --ink2: #444;
-    --ink3: #888;
-    --bg: #fff;
-    --bg2: #f7f7f5;
-    --border: #e5e5e3;
-    --accent: #1a1a1a;
-    --link: #0066cc;
+    --ink: #111111;
+    --ink2: #4a4a4a;
+    --ink3: #7d7d7d;
+    --bg-base: #fafaf9; /* subtle off-white */
+    --bg-card: #ffffff;
+    --bg-accent: #f4f4f0;
+    --border: #eaeaeb;
+    --accent: #111111;
+    --link: #2563eb;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
   }
 
   html { font-size: 16px; scroll-behavior: smooth; }
@@ -23,18 +26,31 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     color: var(--ink);
-    background: var(--bg);
+    background: var(--bg-base);
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+  }
+  
+  /* Reveal Animation */
+  .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
   }
 
   /* ── Nav ── */
   nav {
     position: sticky;
     top: 0;
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
+    background: rgba(250, 250, 249, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
     padding: 0;
     z-index: 100;
   }
@@ -94,8 +110,9 @@
     background: var(--ink);
     color: #fff;
     border-color: var(--ink);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
-  .hero-links a.primary:hover { background: #333; border-color: #333; }
+  .hero-links a.primary:hover { background: #222; border-color: #222; transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
 
   /* ── Sections ── */
   section { padding: 52px 0; border-bottom: 1px solid var(--border); }
@@ -113,16 +130,18 @@
   .about-text { font-size: 0.95rem; color: var(--ink2); max-width: 600px; line-height: 1.75; }
 
   /* ── Experience ── */
-  .exp-item { margin-bottom: 36px; }
+  .exp-item { margin-bottom: 40px; }
   .exp-item:last-child { margin-bottom: 0; }
   .exp-meta {
     font-size: 0.75rem;
     color: var(--ink3);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
   }
-  .exp-item h3 { font-size: 1rem; font-weight: 600; margin-bottom: 2px; }
-  .exp-company { font-size: 0.88rem; color: var(--ink2); margin-bottom: 10px; }
+  .exp-item h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 2px; color: var(--ink); }
+  .exp-company { font-size: 0.9rem; color: var(--ink2); margin-bottom: 12px; }
   .exp-item ul { list-style: none; padding: 0; }
   .exp-item li {
     font-size: 0.88rem;
@@ -139,20 +158,23 @@
   }
 
   /* ── Writing ── */
-  .writing-grid { display: grid; gap: 16px; }
+  .writing-grid { display: grid; gap: 20px; }
   .writing-card {
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 24px;
+    border-radius: 12px;
+    padding: 28px 26px;
     text-decoration: none;
     color: inherit;
     display: block;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
   }
   .writing-card:hover {
-    border-color: #ccc;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-color: #dcdcdc;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
   .writing-card-head {
     display: flex;
@@ -177,8 +199,8 @@
     text-transform: uppercase;
     white-space: nowrap;
   }
-  .wtag-sys { background: #eef6ff; color: #1a5fa8; }
-  .wtag-scale { background: #fff4ee; color: #b84a1a; }
+  .wtag-sys { background: rgba(37, 99, 235, 0.08); color: #2563eb; }
+  .wtag-scale { background: rgba(220, 38, 38, 0.08); color: #dc2626; }
   .writing-card p {
     font-size: 0.85rem;
     color: var(--ink3);
@@ -215,31 +237,50 @@
   .pdf-link:hover { border-color: #bbb; color: var(--ink); }
 
   /* ── Projects ── */
-  .project-item { margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
-  .project-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-  .project-item h3 { font-size: 0.92rem; font-weight: 600; }
-  .project-item h3 a { color: var(--link); text-decoration: none; }
-  .project-item h3 a:hover { text-decoration: underline; }
-  .project-item p { font-size: 0.85rem; color: var(--ink2); margin: 4px 0 8px; }
-  .project-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .project-item { 
+    margin-bottom: 24px; 
+    padding: 24px; 
+    border: 1px solid var(--border); 
+    border-radius: 12px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .project-item:hover {
+    border-color: #dcdcdc;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .project-item:last-child { margin-bottom: 0; }
+  .project-item h3 { font-size: 0.95rem; font-weight: 600; }
+  .project-item h3 a { color: var(--ink); text-decoration: none; transition: color 0.15s; }
+  .project-item h3 a:hover { color: var(--link); text-decoration: none; }
+  .project-item p { font-size: 0.88rem; color: var(--ink2); margin: 6px 0 14px; }
+  .project-tags { display: flex; gap: 8px; flex-wrap: wrap; }
   .ptag {
     font-size: 0.72rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: var(--bg2);
-    color: var(--ink3);
-    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: var(--bg-accent);
+    color: var(--ink2);
+    font-weight: 500;
   }
 
   /* ── Skills ── */
   .skills-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
   .skill {
     font-size: 0.8rem;
-    padding: 4px 12px;
+    padding: 5px 14px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 20px;
     color: var(--ink2);
-    background: var(--bg2);
+    background: var(--bg-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .skill:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    color: var(--ink);
   }
 
   /* ── Education ── */
@@ -511,9 +552,15 @@
 </div>
 
 <script>
+  // Add dynamic reveal classes
+  const revealElementsSelector = '.hero, section > h2, .about-text, .exp-item, .writing-card, .project-item, .skill, .edu-item, .cert-block';
+  document.querySelectorAll(revealElementsSelector).forEach(el => el.classList.add('reveal'));
+
+  // Intersection Observers
   const sections = document.querySelectorAll('section[id], .hero');
   const navLinks = document.querySelectorAll('nav a[href^="#"]');
-  const observer = new IntersectionObserver((entries) => {
+  
+  const navObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         navLinks.forEach(l => l.classList.remove('active'));
@@ -521,8 +568,19 @@
         if (active) active.classList.add('active');
       }
     });
-  }, { threshold: 0.3 });
-  sections.forEach(s => observer.observe(s));
+  }, { threshold: 0.2, rootMargin: "-10% 0px -40% 0px" });
+  sections.forEach(s => navObserver.observe(s));
+
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
+  
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 </script>
 
 </body>
