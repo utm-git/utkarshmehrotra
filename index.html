@@ -347,7 +347,7 @@
     <h2>About</h2>
     <p class="about-text">Senior software engineer with 6+ years of experience designing and owning large-scale distributed systems across fintech, payments, and enterprise platforms. Currently leading backend infrastructure for Samsung's lending platform across Southeast Asia and India — building systems that handle real-time payment reconciliation, repayment orchestration, and delinquency reduction at scale.</p>
     <br>
-    <p class="about-text">Previously architected a 10M+ events/day fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering $150K+ in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.</p>
+    <p class="about-text">Previously architected a 100M+ events/day fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering $150K+ in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.</p>
   </section>
 
   <!-- Experience -->
@@ -374,7 +374,7 @@
       <h3>Lead Software Engineer</h3>
       <div class="exp-company">Western Union · Pune</div>
       <ul>
-        <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing 10M+ events/day with sub-second latency across transactional, behavioral, and authentication event streams.</li>
+        <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing 100M+ events/day with sub-second latency across transactional, behavioral, and authentication event streams.</li>
         <li>Designed the system to act on fraud signals before transaction settlement — shrinking the exposure window from minutes to milliseconds and enabling intervention at the earliest point in the payment flow.</li>
         <li>Built configurable rule-execution and enrichment pipelines for contextual risk scoring — allowing fraud rules to be updated and deployed without engineering intervention, reducing time-to-detection for new fraud patterns.</li>
         <li>Engineered backend integration with ML scoring services, consuming real-time risk signals without adding latency to the core transaction path.</li>
@@ -429,7 +429,7 @@
 
       <div class="writing-card">
         <div class="writing-card-head">
-          <h3>Architecting a 10M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</h3>
+          <h3>Architecting a 100M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</h3>
           <div class="writing-card-tags">
             <span class="wtag wtag-sys">Streaming</span>
             <span class="wtag wtag-sys">Kafka · Flink</span>
@@ -449,7 +449,7 @@
             <span class="wtag wtag-scale">50K+ req/s</span>
           </div>
         </div>
-        <p>My Western Union pipeline handles 115 events/second reliably. Here's exactly what fails at 1,500/s and 50,000/s — tiered state, feature stores, graph engines, per-stage latency budgets — and how I'd rebuild each layer.</p>
+        <p>A systematic analysis of where a 100M events/day fraud detection pipeline breaks at JPMC and PayPal throughput levels — and the architectural changes required at each scale inflection point.</p>
         <div class="writing-card-footer">
           <a class="read-link" href="jpmc-scale.html">Read article →</a>
         </div>

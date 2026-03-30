@@ -185,7 +185,7 @@
   <div class="article-header">
     <span class="category-label">Engineering · Distributed Systems · Financial Infrastructure</span>
     <h1>Designing Financial Infrastructure for Extreme Scale (50K+ req/sec)</h1>
-    <p class="subtitle">A systematic analysis of where a 10M events/day fraud detection pipeline breaks at JPMC and PayPal throughput levels — and the architectural changes required at each scale inflection point.</p>
+    <p class="subtitle">A systematic analysis of where a 100M events/day fraud detection pipeline breaks at JPMC and PayPal throughput levels — and the architectural changes required at each scale inflection point.</p>
     <div class="byline">
       <span class="byline-author">Utkarsh Mehrotra</span>
       <span class="byline-dot">·</span>
@@ -198,8 +198,8 @@
   <div class="scale-grid">
     <div class="scale-col current">
       <div class="scale-col-label">Baseline (built)</div>
-      <div class="scale-num c">115/s</div>
-      <div class="scale-detail">10M events/day<br>&lt;1s P99 latency<br>3 stream types<br>Single region</div>
+      <div class="scale-num c">1,150/s</div>
+      <div class="scale-detail">100M events/day<br>&lt;1s P99 latency<br>3 stream types<br>Single region</div>
     </div>
     <div class="scale-col paypal">
       <div class="scale-col-label">PayPal tier</div>
@@ -217,9 +217,9 @@
 
     <h2>Introduction</h2>
 
-    <p>The fraud detection pipeline described in a <a href="wu-pipeline.html">previous post</a> was designed to solve a specific organisational problem: giving a fraud analytics team the ability to act on attack patterns in near real-time rather than across sprint cycles. At 10M events/day and sub-second latency, it does that reliably. But the same architectural decisions that make it correct at that scale would cause it to fail quietly — and then loudly — under the throughput requirements of a JPMC or PayPal.</p>
+    <p>The fraud detection pipeline described in a <a href="wu-pipeline.html">previous post</a> was designed to solve a specific organisational problem: giving a fraud analytics team the ability to act on attack patterns in near real-time rather than across sprint cycles. At 100M events/day and sub-second latency, it does that reliably. But the same architectural decisions that make it correct at that scale would cause it to fail quietly — and then loudly — under the throughput requirements of a JPMC or PayPal.</p>
 
-    <p>The failure is not hypothetical. Tier-1 financial institutions have learned these lessons expensively: JPMC's payment infrastructure must sustain fraud scoring at 50,000+ events/second with a 50ms P99 SLA on card rails. A single architectural assumption that holds at 115 events/second — Flink managing all session state in RocksDB, a single model handling all fraud typologies, passive failover for regional outages — becomes a liability that manifests as missed fraud, regulatory exposure, or payment rail downtime at that throughput.</p>
+    <p>The failure is not hypothetical. Tier-1 financial institutions have learned these lessons expensively: JPMC's payment infrastructure must sustain fraud scoring at 50,000+ events/second with a 50ms P99 SLA on card rails. A single architectural assumption that holds at 1,150 events/second — Flink managing all session state in RocksDB, a single model handling all fraud typologies, passive failover for regional outages — becomes a liability that manifests as missed fraud, regulatory exposure, or payment rail downtime at that throughput.</p>
 
     <p>This post is a systematic analysis of exactly which components fail, at which scale inflection, and why. For each failure mode, we describe the options we evaluated and the specific reasons for the architectural changes required. The goal is to be precise about the engineering tradeoffs rather than assert that scale requires "more infrastructure."</p>
 
@@ -230,7 +230,7 @@
     <ul class="failure-list">
       <li>
         <span class="fbadge fb-hard">Latency</span>
-        <div><strong>Tail latency amplification.</strong> At 115 events/second, a P99 of 800ms is acceptable. At 50,000/second, tail latency compounds across stages — a single slow ML scoring call backs up the Spark rule evaluation stage, which backs up the Flink enrichment stage, which backs up Kafka consumer groups. A single end-to-end SLA must be replaced with per-stage latency budgets, each enforced independently with circuit breakers at every service boundary.</div>
+        <div><strong>Tail latency amplification.</strong> At 1,150 events/second, a P99 of 800ms is acceptable. At 50,000/second, tail latency compounds across stages — a single slow ML scoring call backs up the Spark rule evaluation stage, which backs up the Flink enrichment stage, which backs up Kafka consumer groups. A single end-to-end SLA must be replaced with per-stage latency budgets, each enforced independently with circuit breakers at every service boundary.</div>
       </li>
       <li>
         <span class="fbadge fb-perf">State size</span>
@@ -390,7 +390,7 @@
 
     <h3>Ingestion: schema enforcement and compound partition keys</h3>
 
-    <p>At 115 events/second, a schema-incompatible event from a misbehaving producer causes a Flink job exception that surfaces quickly in monitoring. At 50,000 events/second, the same producer firing for 30 seconds before detection can corrupt checkpoint state across multiple task managers and require a full state rebuild.</p>
+    <p>At 1,150 events/second, a schema-incompatible event from a misbehaving producer causes a Flink job exception that surfaces quickly in monitoring. At 50,000 events/second, the same producer firing for 30 seconds before detection can corrupt checkpoint state across multiple task managers and require a full state rebuild.</p>
 
     <p>We address this by enforcing Avro schemas through Confluent Schema Registry at the producer boundary. Schema-incompatible events are rejected before reaching Kafka — the failure is loud and immediate at the producer, rather than silent and cascading inside the pipeline. Additionally, the partition key changes from <code>user_id</code> to <code>user_id + instrument_id</code>: at PayPal-scale user populations, a single user may hold dozens of payment instruments, and per-instrument velocity tracking across partitions requires expensive coordination that a compound key eliminates.</p>
 
@@ -517,7 +517,7 @@
 
     <p>The upgrades described in this post are additive, not corrective. The three-layer topology (ingest → process → act), entity-keyed partitioning, asynchronous ML integration, externalised rule management, and dead-letter queue design from the baseline system are all valid and carry forward unchanged.</p>
 
-    <p>The components introduced at tier-1 scale — feature store, graph engine, ensemble scoring, tiered state, SHAP audit logging, active-active geo-distribution — are not improvements to a flawed design. They are the natural evolution of a sound design as throughput, regulatory complexity, and failure tolerance requirements increase. Each upgrade is justified by a specific failure mode that does not appear at 115 events/second but becomes load-bearing above 1,500.</p>
+    <p>The components introduced at tier-1 scale — feature store, graph engine, ensemble scoring, tiered state, SHAP audit logging, active-active geo-distribution — are not improvements to a flawed design. They are the natural evolution of a sound design as throughput, regulatory complexity, and failure tolerance requirements increase. Each upgrade is justified by a specific failure mode that does not appear at 1,150 events/second but becomes load-bearing above 1,500.</p>
 
     <p>Understanding which upgrade to apply at which scale inflection, and being able to articulate why each one is necessary at that point and not before, is the practical substance of distributed systems engineering at this level.</p>
 

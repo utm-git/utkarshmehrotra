@@ -576,7 +576,7 @@
                 Senior software engineer with 6+ years of experience designing and owning large-scale distributed systems across fintech, payments, and enterprise platforms. Currently leading backend infrastructure for Samsung's lending platform across Southeast Asia and India — building systems that handle real-time payment reconciliation, repayment orchestration, and delinquency reduction at scale. 
             </p>
             <p>
-                Previously architected a 10M+ events/day fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering $150K+ in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.
+                Previously architected a 100M+ events/day fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering $150K+ in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.
             </p>
         </section>
 
@@ -609,7 +609,7 @@
                     <div class="timeline-company">Western Union · Pune</div>
                     <div class="timeline-content">
                         <ul>
-                            <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing 10M+ events/day with sub-second latency across transactional, behavioral, and authentication event streams.</li>
+                            <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing 100M+ events/day with sub-second latency across transactional, behavioral, and authentication event streams.</li>
                             <li>Designed the system to act on fraud signals before transaction settlement — shrinking the exposure window from minutes to milliseconds and enabling intervention at the earliest point in the payment flow.</li>
                             <li>Built configurable rule-execution and enrichment pipelines for contextual risk scoring — allowing fraud rules to be updated and deployed without engineering intervention, reducing time-to-detection for new fraud patterns.</li>
                             <li>Engineered backend integration with ML scoring services, consuming real-time risk signals without adding latency to the core transaction path.</li>
@@ -719,7 +719,7 @@
                 
                 <div class="writing-card reveal">
                     <div class="writing-card-head">
-                        <h3>I Built a 10M Events/Day Fraud Detection Pipeline. Here's What I Learned.</h3>
+                        <h3>Architecting a 100M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</h3>
                         <div class="writing-card-tags">
                             <span class="wtag wtag-sys">Streaming</span>
                             <span class="wtag wtag-sys">Kafka · Flink</span>
@@ -727,23 +727,35 @@
                     </div>
                     <p>Six months at Western Union redesigning fraud detection from batch to streaming — the architecture, the hard tradeoffs around exactly-once semantics, and three things I'd do differently if I started today.</p>
                     <div class="writing-card-footer">
-                        <a class="read-link" href="assets/blogs/wu-pipeline-utkarsh.pdf" target="_blank">Read article &rarr;</a>
-                        <a class="pdf-link" href="assets/blogs/wu-pipeline-utkarsh.pdf" download="Western_Union_Fraud_Detection_Pipeline_Utkarsh.pdf">&darr; PDF</a>
+                        <a class="read-link" href="wu-pipeline.html">Read article &rarr;</a>
                     </div>
                 </div>
 
                 <div class="writing-card reveal">
                     <div class="writing-card-head">
-                        <h3>I Know What Would Break at JPMC / PayPal Scale. Here's the Redesign.</h3>
+                        <h3>Designing Financial Infrastructure for Extreme Scale (50K+ req/sec)</h3>
                         <div class="writing-card-tags">
                             <span class="wtag wtag-scale">Scale</span>
                             <span class="wtag wtag-scale">50K+ req/s</span>
                         </div>
                     </div>
-                    <p>My Western Union pipeline handles 115 events/second reliably. Here's exactly what fails at 1,500/s and 50,000/s — tiered state, feature stores, graph engines, per-stage latency budgets — and how I'd rebuild each layer.</p>
+                    <p>A systematic analysis of where a 100M events/day fraud detection pipeline breaks at JPMC and PayPal throughput levels — and the architectural changes required at each scale inflection point.</p>
                     <div class="writing-card-footer">
-                        <a class="read-link" href="assets/blogs/jpmc-scale-utkarsh.pdf" target="_blank">Read article &rarr;</a>
-                        <a class="pdf-link" href="assets/blogs/jpmc-scale-utkarsh.pdf" download="JPMC_PayPal_Scale_Utkarsh.pdf">&darr; PDF</a>
+                        <a class="read-link" href="jpmc-scale.html">Read article &rarr;</a>
+                    </div>
+                </div>
+
+                <div class="writing-card reveal">
+                    <div class="writing-card-head">
+                        <h3>Building a Lending Platform Across Four Markets: Correctness at Scale</h3>
+                        <div class="writing-card-tags">
+                            <span class="wtag wtag-sys">Architecture</span>
+                            <span class="wtag wtag-sys">Fintech</span>
+                        </div>
+                    </div>
+                    <p>How we designed Samsung's lending platform's infrastructure to guarantee financial correctness under distributed failure — and why the hardest problems were not throughput, but consistency and auditability.</p>
+                    <div class="writing-card-footer">
+                        <a class="read-link" href="samsung-finance.html">Read article &rarr;</a>
                     </div>
                 </div>
 
