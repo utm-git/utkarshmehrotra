@@ -1,10 +1,10 @@
 # Utkarsh Mehrotra - Personal Portfolio
 
-A sleek, static, single-file personal portfolio landing page for [Utkarsh Mehrotra](https://github.com/utm-git).
+A sleek, static, single-file personal portfolio landing page for [Utkarsh Mehrotra](https://github.com/utkarsh-mehrotra).
 
 ## 🌍 Live Website
 
-View the live portfolio at: **[https://utm-git.github.io/utkarshmehrotra/](https://utm-git.github.io/utkarshmehrotra/)**
+View the live portfolio at: **[https://utkarsh-mehrotra.github.io/](https://utkarsh-mehrotra.github.io/)**
 
 ## 🛠️ Tech Stack & Architecture
 
