@@ -11,18 +11,35 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* ─── DESIGN SYSTEM v2 ─── */
   :root {
-    --ink: #111111;
-    --ink2: #4a4a4a;
-    --ink3: #7d7d7d;
-    --bg-base: #fafaf9; /* subtle off-white */
+    /* Neutrals — unchanged */
+    --ink: #0d0d0d;
+    --ink2: #444444;
+    --ink3: #888888;
+    --bg-base: #fafaf9;
     --bg-card: #ffffff;
     --bg-accent: #f4f4f0;
-    --border: #eaeaeb;
-    --accent: #111111;
-    --link: #2563eb;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+    --border: #e8e8ea;
+    --border-hover: #cfd0d5;
+
+    /* ACCENT — single premium blue */
+    --accent: #3B82F6;
+    --accent-dim: rgba(59, 130, 246, 0.08);
+    --accent-mid: rgba(59, 130, 246, 0.15);
+
+    /* Legacy alias (keep for backwards compat) */
+    --link: #3B82F6;
+
+    /* Shadows — slightly lifted */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    --shadow-md: 0 6px 20px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.03);
+    --shadow-hover: 0 8px 24px rgba(59, 130, 246, 0.08), 0 2px 6px rgba(0,0,0,0.04);
+
+    /* Transitions */
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --fast: 150ms;
+    --mid: 220ms;
   }
 
   html { font-size: 16px; scroll-behavior: smooth; }
@@ -33,29 +50,38 @@
     background: var(--bg-base);
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
-  }
-  
-  /* Reveal Animation */
-  .reveal {
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .reveal.active {
-      opacity: 1;
-      transform: translateY(0);
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ── Nav ── */
+  /* ── Reveal Animation ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  }
+  .reveal.active { opacity: 1; transform: translateY(0); }
+
+  /* ── HIGHLIGHT / ACCENT TEXT ── */
+  /* Use on: scale metrics, company names, key impact numbers */
+  .highlight {
+    color: var(--ink);
+    font-weight: 600;
+    /* No color change — keeps it clean. Pop via weight only. */
+  }
+  .accent-text {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── NAV ── */
   nav {
     position: sticky;
     top: 0;
-    background: rgba(250, 250, 249, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(0,0,0,0.04);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-    padding: 0;
+    background: rgba(250, 250, 249, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04);
     z-index: 100;
   }
   .nav-inner {
@@ -64,17 +90,21 @@
     padding: 0 24px;
     display: flex;
     align-items: center;
-    gap: 0;
     height: 48px;
   }
   .nav-name {
     font-weight: 600;
     font-size: 0.9rem;
+    letter-spacing: -0.01em;
     color: var(--ink);
     margin-right: auto;
     text-decoration: none;
+    transition: color var(--fast) var(--ease);
   }
+  .nav-name:hover { color: var(--accent); }
+
   nav a {
+    position: relative;
     font-size: 0.82rem;
     color: var(--ink3);
     text-decoration: none;
@@ -82,86 +112,156 @@
     height: 48px;
     display: flex;
     align-items: center;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
+    transition: color var(--fast) var(--ease);
+  }
+  /* Animated underline — replaces border-bottom */
+  nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform var(--mid) var(--ease);
   }
   nav a:hover { color: var(--ink); }
-  nav a.active { color: var(--ink); border-bottom-color: var(--ink); }
+  nav a:hover::after { transform: scaleX(0.6); }
+  nav a.active { color: var(--ink); }
+  nav a.active::after { transform: scaleX(1); }
 
   /* ── Layout ── */
   .page { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 
-  /* ── Hero ── */
+  /* ── HERO ── */
   .hero {
-    padding: 64px 0 48px;
+    padding: 68px 0 52px;
     border-bottom: 1px solid var(--border);
   }
-  .hero h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
-  .hero .role { font-size: 1rem; color: var(--ink2); margin-bottom: 10px; }
-  .hero .tags { font-size: 0.82rem; color: var(--ink3); margin-bottom: 28px; }
+  .hero h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .hero .role {
+    font-size: 1rem;
+    color: var(--ink2);
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+  /* Accent on company name in role */
+  .hero .role strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .hero .tags {
+    font-size: 0.82rem;
+    color: var(--ink3);
+    margin-bottom: 32px;
+    line-height: 1.8;
+  }
   .hero-links { display: flex; gap: 10px; flex-wrap: wrap; }
   .hero-links a {
     font-size: 0.82rem;
-    padding: 6px 14px;
+    font-weight: 500;
+    padding: 7px 16px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--ink2);
     text-decoration: none;
-    transition: border-color 0.15s, color 0.15s;
+    transition: border-color var(--fast) var(--ease),
+                color var(--fast) var(--ease),
+                transform var(--mid) var(--ease),
+                box-shadow var(--mid) var(--ease);
   }
-  .hero-links a:hover { border-color: var(--ink3); color: var(--ink); }
+  .hero-links a:hover {
+    border-color: var(--border-hover);
+    color: var(--ink);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  /* Primary CTA — accent fill */
   .hero-links a.primary {
-    background: var(--ink);
+    background: var(--accent);
     color: #fff;
-    border-color: var(--ink);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    font-weight: 500;
   }
-  .hero-links a.primary:hover { background: #222; border-color: #222; transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
+  .hero-links a.primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.35);
+  }
 
-  /* ── Sections ── */
-  section { padding: 52px 0; border-bottom: 1px solid var(--border); }
+  /* ── SECTIONS ── */
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
   section:last-child { border-bottom: none; }
   section h2 {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
     color: var(--ink3);
-    margin-bottom: 28px;
+    margin-bottom: 30px;
   }
 
-  /* ── About ── */
-  .about-text { font-size: 0.95rem; color: var(--ink2); max-width: 600px; line-height: 1.75; }
+  /* ── ABOUT ── */
+  .about-text {
+    font-size: 0.95rem;
+    color: var(--ink2);
+    max-width: 600px;
+    line-height: 1.78;
+  }
 
-  /* ── Experience ── */
-  .exp-item { margin-bottom: 40px; }
+  /* ── EXPERIENCE ── */
+  .exp-item { margin-bottom: 44px; }
   .exp-item:last-child { margin-bottom: 0; }
   .exp-meta {
-    font-size: 0.75rem;
+    font-size: 0.73rem;
     color: var(--ink3);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     font-weight: 500;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
   }
-  .exp-item h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 2px; color: var(--ink); }
-  .exp-company { font-size: 0.9rem; color: var(--ink2); margin-bottom: 12px; }
+  .exp-item h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin-bottom: 2px;
+    color: var(--ink);
+  }
+  .exp-company {
+    font-size: 0.88rem;
+    color: var(--ink3);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
   .exp-item ul { list-style: none; padding: 0; }
   .exp-item li {
-    font-size: 0.88rem;
+    font-size: 0.875rem;
     color: var(--ink2);
-    padding: 4px 0 4px 14px;
+    padding: 4px 0 4px 16px;
     position: relative;
-    line-height: 1.65;
+    line-height: 1.68;
   }
   .exp-item li::before {
     content: '·';
     position: absolute;
     left: 0;
-    color: var(--ink3);
+    color: var(--border-hover);
+    font-weight: 700;
   }
 
-  /* ── Writing ── */
+  /* ── WRITING CARDS ── */
   .writing-grid { display: grid; gap: 20px; }
   .writing-card {
     border: 1px solid var(--border);
@@ -172,30 +272,45 @@
     display: block;
     background: var(--bg-card);
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform var(--mid) var(--ease),
+                box-shadow var(--mid) var(--ease),
+                border-color var(--mid) var(--ease);
     position: relative;
+    overflow: hidden;
+  }
+  /* Top accent bar — appears on hover */
+  .writing-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity var(--mid) var(--ease);
   }
   .writing-card:hover {
-    border-color: #dcdcdc;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
   }
+  .writing-card:hover::before { opacity: 1; }
   .writing-card-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .writing-card h3 {
-    font-size: 0.98rem;
+    font-size: 0.97rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--ink);
-    line-height: 1.4;
+    line-height: 1.42;
   }
   .writing-card-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .wtag {
-    font-size: 0.68rem;
+    font-size: 0.67rem;
     font-weight: 500;
     padding: 2px 8px;
     border-radius: 4px;
@@ -203,29 +318,41 @@
     text-transform: uppercase;
     white-space: nowrap;
   }
-  .wtag-sys { background: rgba(37, 99, 235, 0.08); color: #2563eb; }
-  .wtag-scale { background: rgba(220, 38, 38, 0.08); color: #dc2626; }
+  .wtag-sys { background: var(--accent-dim); color: var(--accent); }
+  .wtag-scale { background: rgba(220, 38, 38, 0.07); color: #dc2626; }
   .writing-card p {
     font-size: 0.85rem;
     color: var(--ink3);
-    line-height: 1.6;
-    margin-bottom: 16px;
+    line-height: 1.62;
+    margin-bottom: 18px;
   }
-  .writing-card-footer {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .writing-card-footer { display: flex; align-items: center; gap: 12px; }
+
+  /* Read link — animated underline */
   .read-link {
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--ink);
+    color: var(--accent);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    position: relative;
+    transition: color var(--fast) var(--ease);
   }
-  .read-link:hover { text-decoration: underline; }
+  .read-link::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--mid) var(--ease);
+  }
+  .read-link:hover { color: #2563eb; }
+  .read-link:hover::after { transform: scaleX(1); }
+
   .pdf-link {
     font-size: 0.78rem;
     color: var(--ink3);
@@ -236,69 +363,102 @@
     padding: 3px 10px;
     border: 1px solid var(--border);
     border-radius: 5px;
-    transition: border-color 0.15s, color 0.15s;
+    transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
   }
-  .pdf-link:hover { border-color: #bbb; color: var(--ink); }
+  .pdf-link:hover { border-color: var(--border-hover); color: var(--ink); }
 
-  /* ── Projects ── */
-  .project-item { 
-    margin-bottom: 24px; 
-    padding: 24px; 
-    border: 1px solid var(--border); 
+  /* ── PROJECT ITEMS ── */
+  .project-item {
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--bg-card);
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform var(--mid) var(--ease),
+                box-shadow var(--mid) var(--ease),
+                border-color var(--mid) var(--ease);
+    position: relative;
+    overflow: hidden;
+  }
+  .project-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity var(--mid) var(--ease);
   }
   .project-item:hover {
-    border-color: #dcdcdc;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
   }
+  .project-item:hover::before { opacity: 1; }
   .project-item:last-child { margin-bottom: 0; }
-  .project-item h3 { font-size: 0.95rem; font-weight: 600; }
-  .project-item h3 a { color: var(--ink); text-decoration: none; transition: color 0.15s; }
-  .project-item h3 a:hover { color: var(--link); text-decoration: none; }
-  .project-item p { font-size: 0.88rem; color: var(--ink2); margin: 6px 0 14px; }
+  .project-item h3 { font-size: 0.94rem; font-weight: 600; letter-spacing: -0.01em; }
+  .project-item h3 a {
+    color: var(--ink);
+    text-decoration: none;
+    transition: color var(--fast) var(--ease);
+  }
+  .project-item h3 a:hover { color: var(--accent); }
+  .project-item p { font-size: 0.87rem; color: var(--ink2); margin: 7px 0 14px; line-height: 1.6; }
   .project-tags { display: flex; gap: 8px; flex-wrap: wrap; }
   .ptag {
-    font-size: 0.72rem;
+    font-size: 0.71rem;
     padding: 3px 10px;
     border-radius: 6px;
     background: var(--bg-accent);
-    color: var(--ink2);
+    color: var(--ink3);
     font-weight: 500;
+    border: 1px solid var(--border);
+    transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
   }
+  .ptag:hover { border-color: var(--border-hover); color: var(--ink2); }
 
-  /* ── Skills ── */
+  /* ── SKILLS ── */
   .skills-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
   .skill {
-    font-size: 0.8rem;
+    font-size: 0.79rem;
     padding: 5px 14px;
     border: 1px solid var(--border);
     border-radius: 20px;
     color: var(--ink2);
     background: var(--bg-card);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--mid) var(--ease),
+                box-shadow var(--fast) var(--ease),
+                color var(--fast) var(--ease),
+                border-color var(--fast) var(--ease);
+    cursor: default;
   }
   .skill:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
     color: var(--ink);
+    border-color: var(--border-hover);
   }
 
-  /* ── Education ── */
-  .edu-item { margin-bottom: 14px; }
+  /* ── EDUCATION ── */
+  .edu-item { margin-bottom: 16px; }
   .edu-item:last-child { margin-bottom: 0; }
-  .edu-item h3 { font-size: 0.9rem; font-weight: 600; }
-  .edu-item p { font-size: 0.82rem; color: var(--ink3); }
+  .edu-item h3 { font-size: 0.9rem; font-weight: 600; letter-spacing: -0.01em; }
+  .edu-item p { font-size: 0.82rem; color: var(--ink3); margin-top: 2px; }
 
-  /* ── Certs ── */
-  .cert-block { margin-bottom: 16px; }
-  .cert-block h3 { font-size: 0.82rem; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-  .cert-block p { font-size: 0.88rem; color: var(--ink2); }
+  /* ── CERTS ── */
+  .cert-block { margin-bottom: 18px; }
+  .cert-block h3 {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    margin-bottom: 5px;
+  }
+  .cert-block p { font-size: 0.87rem; color: var(--ink2); }
 
-  /* ── Footer ── */
+  /* ── FOOTER ── */
   footer {
     padding: 32px 0;
     display: flex;
@@ -307,10 +467,27 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  footer p { font-size: 0.78rem; color: var(--ink3); }
-  .footer-links { display: flex; gap: 16px; }
-  .footer-links a { font-size: 0.78rem; color: var(--ink3); text-decoration: none; }
+  footer p { font-size: 0.77rem; color: var(--ink3); }
+  .footer-links { display: flex; gap: 18px; }
+  .footer-links a {
+    font-size: 0.77rem;
+    color: var(--ink3);
+    text-decoration: none;
+    position: relative;
+    transition: color var(--fast) var(--ease);
+  }
+  .footer-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--mid) var(--ease);
+  }
   .footer-links a:hover { color: var(--ink); }
+  .footer-links a:hover::after { transform: scaleX(1); }
 </style>
 </head>
 <body>
@@ -332,7 +509,7 @@
   <!-- Hero -->
   <div class="hero">
     <h1>Utkarsh Mehrotra</h1>
-    <p class="role">Chief Engineer @ Samsung Electronics</p>
+    <p class="role">Chief Engineer @ <strong>Samsung Electronics</strong></p>
     <p class="tags">Real-time systems · Distributed platforms · Backend architecture<br>Ex-Western Union · Ex-Cisco · BITS Pilani</p>
     <div class="hero-links">
       <a href="#about" class="primary">View Resume</a>
@@ -345,9 +522,9 @@
   <!-- About -->
   <section id="about">
     <h2>About</h2>
-    <p class="about-text">Senior software engineer with 6+ years of experience designing and owning large-scale distributed systems across fintech, payments, and enterprise platforms. Currently leading backend infrastructure for Samsung's lending platform across Southeast Asia and India — building systems that handle real-time payment reconciliation, repayment orchestration, and delinquency reduction at scale.</p>
+    <p class="about-text">Senior software engineer with 6+ years of experience designing and owning large-scale distributed systems across fintech, payments, and enterprise platforms. Currently leading backend infrastructure for <span class="highlight">Samsung's lending platform</span> across Southeast Asia and India — building systems that handle real-time payment reconciliation, repayment orchestration, and delinquency reduction at scale.</p>
     <br>
-    <p class="about-text">Previously architected a 100M+ events/day fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering $150K+ in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.</p>
+    <p class="about-text">Previously architected a <span class="highlight">100M+ events/day</span> fraud detection pipeline at Western Union and led Cisco's platform modernization from monolith to microservices, delivering <span class="highlight">$150K+</span> in annual infrastructure savings. Driven by a bias for measurable impact, clean architecture, and systems that hold up under pressure.</p>
   </section>
 
   <!-- Experience -->
@@ -360,10 +537,10 @@
       <div class="exp-company">Samsung Electronics · Bengaluru</div>
       <ul>
         <li>Designed and owned end-to-end backend architecture for Samsung's lending platform across 4 markets (Thailand, Indonesia, Philippines, India) — spanning service decomposition, data modeling, event streaming topology, and deployment configuration.</li>
-        <li>Architected a real-time payment reconciliation engine processing repayment events against loan records with exactly-once semantics — eliminated manual reconciliation entirely, reducing settlement turnaround from T+2 to near real-time across all active geographies.</li>
+        <li>Architected a real-time payment reconciliation engine processing repayment events against loan records with exactly-once semantics — eliminated manual reconciliation entirely, reducing settlement turnaround from <span class="highlight">T+2 to near real-time</span> across all active geographies.</li>
         <li>Designed a distributed state machine for loan lifecycle management with idempotent payment processing — ensuring correctness under retries, duplicate events, and partial failures from third-party payment rails.</li>
         <li>Built delinquency detection pipelines that score at-risk accounts in real time using repayment behavior signals, triggering automated collection workflows and reducing manual intervention overhead.</li>
-        <li>Engineered multi-geography extensibility through config-driven market onboarding — reduced new market rollout from weeks of engineering effort to days, with no core system changes required per geography.</li>
+        <li>Engineered multi-geography extensibility through config-driven market onboarding — reduced new market rollout from <span class="highlight">weeks to days</span>, with no core system changes required per geography.</li>
         <li>Made key architectural tradeoffs around consistency vs. availability — chose strong consistency for loan state transitions while tolerating eventual consistency for reporting and analytics workloads.</li>
         <li>Designed for failure: built retry mechanisms, dead-letter queues, and reconciliation audits to handle upstream payment provider outages and delayed settlement signals without data loss or double-processing.</li>
       </ul>
@@ -374,7 +551,7 @@
       <h3>Lead Software Engineer</h3>
       <div class="exp-company">Western Union · Pune</div>
       <ul>
-        <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing 100M+ events/day with sub-second latency across transactional, behavioral, and authentication event streams.</li>
+        <li>Architected and owned a real-time fraud detection pipeline (Kafka + Spark Streaming + Flink) processing <span class="highlight">100M+ events/day</span> with <span class="highlight">sub-second latency</span> across transactional, behavioral, and authentication event streams.</li>
         <li>Designed the system to act on fraud signals before transaction settlement — shrinking the exposure window from minutes to milliseconds and enabling intervention at the earliest point in the payment flow.</li>
         <li>Built configurable rule-execution and enrichment pipelines for contextual risk scoring — allowing fraud rules to be updated and deployed without engineering intervention, reducing time-to-detection for new fraud patterns.</li>
         <li>Engineered backend integration with ML scoring services, consuming real-time risk signals without adding latency to the core transaction path.</li>
@@ -391,7 +568,7 @@
         <li>Designed and owned core platform services mapping customer and product hierarchies to order flows — enabling consistent entitlement-based pricing across geographies for downstream quoting, invoicing, and finance systems.</li>
         <li>Built real-time shipment and invoicing tracking with graph-based order visibility, giving internal finance and compliance teams granular, auditable insight into order movement across the supply chain.</li>
         <li>Led monolith → microservices migration (Spring Boot + AWS ECS) — improved fault isolation, independent deployability, and system scalability across a platform serving global enterprise customers.</li>
-        <li>Architected and executed Neo4j → Amazon Neptune migration with full Gremlin traversal parity — delivered ~$150K in annual infrastructure cost savings with zero downtime and no regression in query performance.</li>
+        <li>Architected and executed Neo4j → Amazon Neptune migration with full Gremlin traversal parity — delivered <span class="highlight">~$150K in annual infrastructure cost savings</span> with zero downtime and no regression in query performance.</li>
         <li>Mentored junior engineers and authored architecture documentation and migration playbooks that became team-wide standards.</li>
       </ul>
     </div>
@@ -403,8 +580,8 @@
       <ul>
         <li>Built a metadata-driven onboarding engine that dynamically supported new customer-product hierarchies without code changes — eliminated per-integration engineering effort and significantly accelerated partner onboarding velocity across global regions.</li>
         <li>Owned and delivered a role-based access control framework aligned with enterprise security standards, enabling consistent and compliant access management across 300+ internal engineering teams.</li>
-        <li>Built and owned full observability stack (ELK + Prometheus + Grafana) that reduced MTTR by 50%+ across a platform serving hundreds of engineering teams — from reactive firefighting to proactive issue detection.</li>
-        <li>Optimized graph and relational query performance through systematic profiling and index tuning — achieved 40% faster response times on critical entitlement and mapping services at scale.</li>
+        <li>Built and owned full observability stack (ELK + Prometheus + Grafana) that reduced MTTR by <span class="highlight">50%+</span> across a platform serving hundreds of engineering teams — from reactive firefighting to proactive issue detection.</li>
+        <li>Optimized graph and relational query performance through systematic profiling and index tuning — achieved <span class="highlight">40% faster response times</span> on critical entitlement and mapping services at scale.</li>
         <li>Defined canonical data models and platform-wide API contracts in collaboration with product and engineering stakeholders — standardized data interfaces across 10+ enterprise systems and reduced cross-team integration friction significantly.</li>
       </ul>
     </div>
