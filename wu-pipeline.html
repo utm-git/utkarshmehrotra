@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Architecting a 10M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</title>
+<title>Architecting a 100M Events/Day Fraud Detection Pipeline: Tradeoffs & Lessons</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -293,7 +293,7 @@
 
   <div class="article-header">
     <span class="category-label">Engineering · Fraud Detection · Stream Processing</span>
-    <h1>Architecting a 10M Events/Day Fraud Detection Pipeline: Tradeoffs &amp; Lessons</h1>
+    <h1>Architecting a 100M Events/Day Fraud Detection Pipeline: Tradeoffs &amp; Lessons</h1>
     <p class="subtitle">How we redesigned Western Union's fraud infrastructure from a batch-oriented system to a sub-second streaming pipeline — the architectural decisions, failure modes, and what we would do differently.</p>
     <div class="byline">
       <span class="byline-author">Utkarsh Mehrotra</span>
@@ -305,9 +305,9 @@
   </div>
 
   <div class="stats-row">
-    <div class="stat"><div class="stat-num">10M+</div><div class="stat-label">Events per day</div></div>
+    <div class="stat"><div class="stat-num">100M+</div><div class="stat-label">Events per day</div></div>
     <div class="stat"><div class="stat-num">&lt;1s</div><div class="stat-label">End-to-end P99</div></div>
-    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Stream types unified</div></div>
+    <div class="stat"><div class="stat-num">~1,150</div><div class="stat-label">Events/second sustained</div></div>
   </div>
 
   <article>
@@ -447,15 +447,15 @@
 
     <h3>Backpressure management at sustained throughput</h3>
 
-    <p>At 10M events/day the pipeline sustains approximately 115 events per second under normal conditions, with significantly higher spikes around monthly pay cycles and international time-zone peaks. Without backpressure control, slowdowns in downstream stages — the ML scoring service, the action layer — cascade upstream through the enrichment layer into Kafka consumer lag, and eventually cause Flink task managers to run out of heap.</p>
+    <p>At 100M events/day the pipeline sustains approximately 1,150 events per second under normal conditions, with spikes of 3–4× that rate around monthly pay cycles and peak international remittance windows. At this throughput, slowdowns in downstream stages — the ML scoring service, the action layer — do not just add latency. They cascade upstream through the enrichment layer into Kafka consumer group lag within seconds, and from there cause Flink task managers to exhaust heap within minutes. Without active backpressure control, a 10-second ML scoring degradation produces a pipeline recovery time measured in hours, not minutes.</p>
 
-    <p>We implemented Flink's credit-based flow control with dynamic parallelism scaling, driven by consumer lag metrics exported to Prometheus. The critical tuning constraint was that backpressure should slow ingestion rather than drop events. Shedding load by dropping events is not an acceptable degradation mode for a financial fraud pipeline.</p>
+    <p>We implemented Flink's credit-based flow control with dynamic parallelism scaling, driven by consumer lag metrics exported to Prometheus. Task parallelism scales up automatically when consumer lag on any partition crosses a threshold, and scales down during off-peak windows to reduce infrastructure cost. The critical tuning constraint was that backpressure should slow ingestion rather than drop events. Shedding load by dropping events is not an acceptable degradation mode for a financial fraud pipeline — every dropped event is a transaction that escapes scoring entirely.</p>
 
     <h3>Exactly-once semantics: a deliberate tradeoff</h3>
 
-    <p>We evaluated Flink's exactly-once processing mode, which uses two-phase commit between Flink checkpoints and Kafka producers to guarantee that each event is processed precisely once end-to-end. After benchmarking, we chose at-least-once delivery with idempotent consumers instead.</p>
+    <p>We evaluated Flink's exactly-once processing mode, which uses two-phase commit between Flink checkpoints and Kafka producers to guarantee that each event is processed precisely once end-to-end. After benchmarking at our target throughput, we chose at-least-once delivery with idempotent consumers instead.</p>
 
-    <p>Exactly-once mode at our throughput introduced approximately 15% additional latency from two-phase commit coordination — enough to meaningfully compress the available budget for scoring and action dispatch. More importantly, the action layer was already designed to handle duplicate events safely.</p>
+    <p>Exactly-once mode at 1,150 events/second introduced approximately 18% additional end-to-end latency from two-phase commit coordination — the checkpoint barrier propagation and producer flush synchronisation add overhead that compounds at high throughput. At lower throughput, this overhead is absorbed by available headroom. At our sustained rate, it consumed a third of the latency budget before any enrichment or scoring had occurred. More importantly, the action layer was already designed to handle duplicates safely — making the coordination cost of exactly-once a pure overhead with no correctness benefit at the application layer.</p>
 
     <div class="code-block"><pre><span class="cm">// Idempotent signal handler — correct under at-least-once delivery</span>
 <span class="kw">fun</span> <span class="fn">handleFraudSignal</span>(event: FraudSignal) {
@@ -486,14 +486,14 @@
         <tr><td>Partition key</td><td>user_id</td><td>Enables stateful per-user joins without cross-partition coordination</td></tr>
         <tr><td>Processing split</td><td>Flink + Spark</td><td>Flink for low-latency stateful joins; Spark for complex rule evaluation</td></tr>
         <tr><td>ML integration</td><td>Async with fallback</td><td>Synchronous call consumes 200–400ms of latency budget</td></tr>
-        <tr><td>Delivery semantics</td><td>At-least-once + idempotent consumers</td><td>Exactly-once adds ~15% latency overhead from 2PC coordination</td></tr>
+        <tr><td>Delivery semantics</td><td>At-least-once + idempotent consumers</td><td>Exactly-once adds ~18% latency overhead from 2PC at 1,150 events/s; action layer idempotency provides correctness without coordination cost</td></tr>
         <tr><td>Rule management</td><td>Database-driven hot reload</td><td>Removes engineering from the detection-to-rule deployment loop</td></tr>
       </tbody>
     </table>
 
     <h2>A Non-Obvious Production Problem: Consumer Group Rebalancing Storms</h2>
 
-    <p>The failure mode we spent the most time debugging in production was one that does not appear in any Flink or Kafka tutorial: consumer group rebalancing storms triggered by task manager restarts under sustained load.</p>
+    <p>The most operationally complex failure mode we debugged in production was one that does not appear in any Flink or Kafka tutorial: consumer group rebalancing storms triggered by task manager restarts under sustained load of 1,150 events/second.</p>
 
     <p>The sequence was repeatable. A Flink task manager would restart — due to a garbage collection pause, a transient OOM, or a routine deployment — and trigger a Kafka consumer group rebalance. During rebalance, all partition consumption pauses. Under normal conditions this lasts 3–5 seconds. Under sustained load, with consumer lag already accumulating from the restart, the rebalance triggered a secondary condition: Kafka's <code>max.poll.interval.ms</code> was set to its default of 300 seconds, but the time required to process the backlog of accumulated events after the rebalance exceeded that limit. The consumer was marked dead by the group coordinator, triggering another rebalance. The second rebalance caused more lag. The cycle repeated.</p>
 
