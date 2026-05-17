@@ -37,9 +37,13 @@
   }
 
   .container {
-    max-width: 800px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 40px 80px;
+  }
+
+  .article-header, article p, article h2, article h3, article ul, article ol, .callout, .decision, .lessons, .failure-list {
+    max-width: 680px;
   }
 
   /* Reveal Animation */
@@ -61,7 +65,6 @@
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     z-index: 100;
-    border-bottom: 1px solid var(--hairline);
     padding: 16px 0;
     transition: padding 0.45s cubic-bezier(0.16, 1, 0.3, 1), background 0.45s ease;
   }
@@ -191,7 +194,7 @@
     padding: 24px 0;
     align-items: start;
   }
-    .fbadge {
+  .fbadge {
     font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; padding: 4px 10px; border-radius: 6px;
     display: inline-block; margin-bottom: 12px;
@@ -317,6 +320,7 @@
   }
 </style>
 </head>
+
 
 <body>
 <nav>
