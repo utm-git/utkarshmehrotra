@@ -143,11 +143,6 @@
   /* Sections General */
   section {
     padding: 100px 0;
-    border-bottom: 1px solid var(--hairline);
-  }
-
-  section:last-of-type {
-    border-bottom: none;
   }
 
   .section-header {
@@ -162,7 +157,7 @@
   /* Systems Canvas */
   .systems-canvas {
     position: relative;
-    padding: 160px 40px;
+    padding: 110px 40px;
     background: #0a0a0c;
     color: #f5f5f7;
     text-align: center;
@@ -261,10 +256,10 @@
   }
 
   .exp-headline {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 600;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.35;
     margin-bottom: 24px;
     color: var(--text-primary);
   }
@@ -301,23 +296,13 @@
     gap: 64px;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
-    padding: 40px 0;
-    border-bottom: 1px solid var(--hairline);
-  }
-
-  .writing-item:first-child {
-    border-top: 1px solid var(--hairline);
-  }
-
-  .writing-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 24px 0;
   }
 
   .writing-item:hover {
-    transform: translateX(8px);
-    opacity: 0.6;
+    transform: translateY(-2px);
+    opacity: 0.75;
   }
 
   .writing-title {
@@ -344,23 +329,14 @@
     display: grid;
     grid-template-columns: 300px 1fr;
     gap: 64px;
-    padding: 40px 0;
+    padding: 24px 0;
     align-items: baseline;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-    border-bottom: 1px solid var(--hairline);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .project-item:first-child {
-    border-top: 1px solid var(--hairline);
-  }
-  
-  .project-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-  
   .project-item:hover {
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-2px);
+    opacity: 0.75;
   }
 
   .project-name {
@@ -465,13 +441,13 @@
   
   <!-- Hero Section -->
   <header class="hero reveal stagger">
-    <h1>Building financially correct systems for lending, payments, and real-time platforms.</h1>
+    <h1>Designing systems where financial correctness is non-negotiable.</h1>
     <div class="hero-secondary">
       Chief Engineer · Samsung Electronics<br>
       Ex-Western Union · Ex-Cisco · BITS Pilani
     </div>
     <div class="hero-support">
-      Specializing in distributed systems, backend architecture, financial workflows, and large-scale applications where correctness at scale is non-negotiable.
+      Distributed systems for lending, payments, and real-time infrastructure.
     </div>
   </header>
 
@@ -485,7 +461,7 @@
   </div>
 
   <!-- Engineering Philosophy / About -->
-  <section id="about" class="reveal">
+  <section id="about">
     <div class="section-header">Philosophy</div>
     <p style="font-size: 24px; line-height: 1.5; color: var(--text-primary); font-weight: 500; max-width: 800px; margin-bottom: 32px;">
       Engineering at scale is an exercise in managing state, failure, and time. I design backend architectures that handle real-time payment reconciliation, idempotent financial workflows, and high-throughput fraud detection.
@@ -507,10 +483,10 @@
       <div class="exp-content">
       <div class="exp-headline">Built lending infrastructure across four markets.</div>
       <ul class="exp-bullets">
-        <li>Designed end-to-end backend architecture for a lending platform spanning Thailand, Indonesia, Philippines, and India—abstracting market complexities into a unified, config-driven core.</li>
-        <li>Architected a real-time payment reconciliation engine processing repayment events with exactly-once semantics, eliminating manual reconciliation and reducing settlement turnaround from T+2 to near real-time.</li>
-        <li>Engineered a distributed state machine for loan lifecycles with idempotent payment processing, ensuring absolute correctness despite retries and partial failures from third-party rails.</li>
-        <li>Built delinquency detection pipelines that score at-risk accounts dynamically, triggering automated collection workflows based on behavioral repayment signals.</li>
+        <li>Unified lending infrastructure across Thailand, Indonesia, Philippines, and India by abstracting regional market regulations into a centralized, config-driven core.</li>
+        <li>Rebuilt repayment reconciliation around idempotent event processing, reducing settlement visibility from T+2 to near real time and eliminating manual operational overhead.</li>
+        <li>Secured distributed state transitions for loan lifecycles, guaranteeing absolute financial correctness despite partial failures and unreliable third-party payment rails.</li>
+        <li>Introduced dynamic delinquency pipelines that evaluate behavioral repayment signals, automatically triggering tailored collection workflows.</li>
       </ul>
       </div>
     </div>
@@ -523,9 +499,9 @@
       <div class="exp-content">
       <div class="exp-headline">Architected a 100M+ events/day fraud detection pipeline.</div>
       <ul class="exp-bullets">
-        <li>Designed a real-time streaming pipeline (Kafka + Spark Streaming + Flink) processing transactional and behavioral signals with sub-second latency.</li>
-        <li>Shifted fraud detection left, shrinking the exposure window from minutes to milliseconds, enabling intervention before transaction settlement.</li>
-        <li>Built resilient, dynamic parallelism with strict checkpointing and backpressure control, ensuring zero data loss and fault-tolerant execution under massive traffic spikes.</li>
+        <li>Transitioned legacy batch fraud models to a real-time streaming architecture (Kafka, Flink), executing complex behavioral evaluations with sub-second latency.</li>
+        <li>Shifted fraud intervention left, compressing the exposure window from minutes to milliseconds to block malicious activity prior to financial settlement.</li>
+        <li>Hardened pipeline resilience via dynamic parallelism and strict backpressure controls, guaranteeing zero data loss during high-velocity traffic spikes.</li>
       </ul>
       </div>
     </div>
@@ -538,9 +514,9 @@
       <div class="exp-content">
       <div class="exp-headline">Migrated enterprise graph infrastructure with zero downtime.</div>
       <ul class="exp-bullets">
-        <li>Led the architectural migration from Neo4j to Amazon Neptune with full Gremlin traversal parity, delivering $150K in annual savings with no query performance regression.</li>
-        <li>Designed platform services mapping complex customer and product hierarchies to order flows, enforcing consistent entitlement pricing globally.</li>
-        <li>Spearheaded monolith-to-microservices modernization (Spring Boot + AWS ECS), dramatically improving fault isolation and independent deployability for a platform serving global enterprise customers.</li>
+        <li>Migrated enterprise graph infrastructure from Neo4j to Amazon Neptune with exact Gremlin traversal parity, unlocking $150K in annual efficiency gains without performance regressions.</li>
+        <li>Mapped complex, multi-tiered customer and product hierarchies to order execution flows, enforcing mathematically consistent entitlement pricing across global regions.</li>
+        <li>Deconstructed monolithic legacy systems into isolated microservices, fundamentally improving fault domains and deployment autonomy.</li>
       </ul>
       </div>
     </div>
@@ -553,9 +529,9 @@
       <div class="exp-content">
       <div class="exp-headline">Engineered a metadata-driven onboarding engine.</div>
       <ul class="exp-bullets">
-        <li>Eliminated per-integration engineering effort by dynamically supporting new customer hierarchies without code changes, accelerating partner onboarding globally.</li>
-        <li>Owned and delivered a role-based access control framework applied across 300+ internal engineering teams.</li>
-        <li>Optimized graph and relational query performance through systematic index tuning, achieving 40% faster response times for critical entitlement services.</li>
+        <li>Abstracted partner onboarding via a metadata-driven engine, allowing dynamic support for new customer hierarchies globally without manual engineering intervention.</li>
+        <li>Delivered a centralized role-based access control framework, standardizing permissions across 300+ internal engineering teams.</li>
+        <li>Tuned critical graph and relational data paths, improving P99 response times by 40% for core entitlement services.</li>
       </ul>
       </div>
     </div>
@@ -695,10 +671,12 @@
     const canvas = document.getElementById('system-nodes');
     const ctx = canvas.getContext('2d');
     let width, height;
-    let nodes = [];
-    const NODE_COUNT = 50;
-    const CONNECTION_DISTANCE = 150;
-
+    
+    // Anchor nodes (e.g. servers/databases)
+    let anchors = [];
+    // Pulses (signals travelling between anchors)
+    let pulses = [];
+    
     function resize() {
       const rect = canvasContainer.getBoundingClientRect();
       width = rect.width;
@@ -709,66 +687,105 @@
       ctx.scale(dpr, dpr);
     }
 
-    class Node {
-      constructor() {
-        this.x = Math.random() * width;
-        this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.15;
-        this.vy = (Math.random() - 0.5) * 0.15;
-        this.radius = Math.random() * 1.5 + 0.5;
-      }
-      
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x < 0 || this.x > width) this.vx *= -1;
-        if (this.y < 0 || this.y > height) this.vy *= -1;
-      }
-      
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.fill();
-      }
+    function initNodes() {
+      anchors = [
+        { x: width * 0.2, y: height * 0.3, radius: 2.5 },
+        { x: width * 0.8, y: height * 0.7, radius: 2.5 },
+        { x: width * 0.5, y: height * 0.2, radius: 2.5 },
+        { x: width * 0.3, y: height * 0.8, radius: 2.5 },
+        { x: width * 0.7, y: height * 0.4, radius: 2.5 }
+      ];
+      pulses = [];
     }
 
-    function initNodes() {
-      nodes = [];
-      for(let i=0; i<NODE_COUNT; i++) {
-        nodes.push(new Node());
+    function spawnPulse() {
+      if (anchors.length < 2) return;
+      const startIdx = Math.floor(Math.random() * anchors.length);
+      let endIdx = Math.floor(Math.random() * anchors.length);
+      while (endIdx === startIdx) {
+        endIdx = Math.floor(Math.random() * anchors.length);
       }
+      pulses.push({
+        startX: anchors[startIdx].x,
+        startY: anchors[startIdx].y,
+        endX: anchors[endIdx].x,
+        endY: anchors[endIdx].y,
+        progress: 0,
+        speed: 0.002 + Math.random() * 0.002
+      });
     }
 
     let animationFrame;
+    let frameCount = 0;
+    
     function animate() {
       ctx.clearRect(0, 0, width, height);
       
-      // Draw connections
-      for(let i=0; i<nodes.length; i++) {
-        for(let j=i+1; j<nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          
-          if(dist < CONNECTION_DISTANCE) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            const opacity = 1 - (dist / CONNECTION_DISTANCE);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.12})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
+      // Draw graph edges between anchors (faint infrastructure)
+      ctx.beginPath();
+      for(let i=0; i<anchors.length; i++) {
+        for(let j=i+1; j<anchors.length; j++) {
+          ctx.moveTo(anchors[i].x, anchors[i].y);
+          ctx.lineTo(anchors[j].x, anchors[j].y);
         }
       }
-      
-      // Draw nodes
-      for(let node of nodes) {
-        node.update();
-        node.draw();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw pulses
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        p.progress += p.speed;
+        
+        if (p.progress >= 1) {
+          pulses.splice(i, 1);
+          continue;
+        }
+        
+        const currentX = p.startX + (p.endX - p.startX) * p.progress;
+        const currentY = p.startY + (p.endY - p.startY) * p.progress;
+        
+        // Draw pulse dot
+        ctx.beginPath();
+        ctx.arc(currentX, currentY, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(p.progress * Math.PI) * 0.6})`;
+        ctx.fill();
+        
+        // Draw trailing line
+        ctx.beginPath();
+        ctx.moveTo(p.startX + (p.endX - p.startX) * Math.max(0, p.progress - 0.15), 
+                   p.startY + (p.endY - p.startY) * Math.max(0, p.progress - 0.15));
+        ctx.lineTo(currentX, currentY);
+        const grad = ctx.createLinearGradient(
+          p.startX + (p.endX - p.startX) * Math.max(0, p.progress - 0.15), 
+          p.startY + (p.endY - p.startY) * Math.max(0, p.progress - 0.15), 
+          currentX, currentY
+        );
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(1, `rgba(255,255,255,${Math.sin(p.progress * Math.PI) * 0.4})`);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Draw anchor nodes
+      for(let anchor of anchors) {
+        ctx.beginPath();
+        ctx.arc(anchor.x, anchor.y, anchor.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fill();
+        
+        // Subtle breathing ring around anchor
+        ctx.beginPath();
+        ctx.arc(anchor.x, anchor.y, anchor.radius + 3 + Math.sin(frameCount * 0.02) * 2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
       }
       
+      if (Math.random() < 0.03) spawnPulse();
+      frameCount++;
       animationFrame = requestAnimationFrame(animate);
     }
 
