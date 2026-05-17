@@ -30,9 +30,9 @@
   }
 
   .container {
-    max-width: 900px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 0 40px;
+    padding: 0 64px;
   }
 
   /* Reveal Animation */
@@ -187,7 +187,10 @@
 
   /* Experience */
   .exp-role {
-    margin-bottom: 80px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 64px;
+    margin-bottom: 120px;
   }
   .exp-role:last-child {
     margin-bottom: 0;
@@ -195,9 +198,8 @@
 
   .exp-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 16px;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .exp-company {
@@ -210,6 +212,10 @@
     font-size: 16px;
     color: var(--text-secondary);
     font-weight: 500;
+  }
+
+  .exp-content {
+    max-width: 680px;
   }
 
   .exp-headline {
@@ -244,16 +250,22 @@
   .writing-list {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 0;
   }
 
   .writing-item {
-    display: block;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 64px;
     text-decoration: none;
     color: inherit;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
-    padding-bottom: 32px;
+    padding: 40px 0;
     border-bottom: 1px solid var(--hairline);
+  }
+
+  .writing-item:first-child {
+    border-top: 1px solid var(--hairline);
   }
 
   .writing-item:last-child {
@@ -270,27 +282,39 @@
     font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 
   .writing-desc {
     font-size: 19px;
     color: var(--text-secondary);
+    max-width: 680px;
   }
 
   /* Projects */
   .project-list {
     display: flex;
     flex-direction: column;
-    gap: 48px;
+    gap: 0;
   }
 
   .project-item {
     display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 32px;
+    grid-template-columns: 300px 1fr;
+    gap: 64px;
+    padding: 40px 0;
     align-items: baseline;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .project-item:first-child {
+    border-top: 1px solid var(--hairline);
+  }
+  
+  .project-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
   
   .project-item:hover {
@@ -311,6 +335,7 @@
   .project-desc {
     font-size: 19px;
     color: var(--text-secondary);
+    max-width: 680px;
   }
 
   /* Expertise & Education */
@@ -374,7 +399,7 @@
 
   @media (max-width: 768px) {
     .container { padding: 0 24px; }
-    .project-item { grid-template-columns: 1fr; gap: 8px; }
+    .exp-role, .writing-item, .project-item { grid-template-columns: 1fr; gap: 24px; }
     .exp-meta { flex-direction: column; align-items: flex-start; gap: 4px; }
     .hero { padding: 100px 0 80px; }
     .signature-moment { padding: 80px 24px; border-radius: 24px; }
@@ -434,6 +459,7 @@
         <div class="exp-company">Samsung Electronics</div>
         <div class="exp-time">Chief Engineer · 2025–Present</div>
       </div>
+      <div class="exp-content">
       <div class="exp-headline">Built lending infrastructure across four markets.</div>
       <ul class="exp-bullets">
         <li>Designed end-to-end backend architecture for a lending platform spanning Thailand, Indonesia, Philippines, and India—abstracting market complexities into a unified, config-driven core.</li>
@@ -441,6 +467,7 @@
         <li>Engineered a distributed state machine for loan lifecycles with idempotent payment processing, ensuring absolute correctness despite retries and partial failures from third-party rails.</li>
         <li>Built delinquency detection pipelines that score at-risk accounts dynamically, triggering automated collection workflows based on behavioral repayment signals.</li>
       </ul>
+      </div>
     </div>
 
     <div class="exp-role reveal">
@@ -448,12 +475,14 @@
         <div class="exp-company">Western Union</div>
         <div class="exp-time">Lead Software Engineer · 2025</div>
       </div>
+      <div class="exp-content">
       <div class="exp-headline">Architected a 100M+ events/day fraud detection pipeline.</div>
       <ul class="exp-bullets">
         <li>Designed a real-time streaming pipeline (Kafka + Spark Streaming + Flink) processing transactional and behavioral signals with sub-second latency.</li>
         <li>Shifted fraud detection left, shrinking the exposure window from minutes to milliseconds, enabling intervention before transaction settlement.</li>
         <li>Built resilient, dynamic parallelism with strict checkpointing and backpressure control, ensuring zero data loss and fault-tolerant execution under massive traffic spikes.</li>
       </ul>
+      </div>
     </div>
 
     <div class="exp-role reveal">
@@ -461,12 +490,14 @@
         <div class="exp-company">Cisco</div>
         <div class="exp-time">Software Engineer 3 · 2023–2024</div>
       </div>
+      <div class="exp-content">
       <div class="exp-headline">Migrated enterprise graph infrastructure with zero downtime.</div>
       <ul class="exp-bullets">
         <li>Led the architectural migration from Neo4j to Amazon Neptune with full Gremlin traversal parity, delivering $150K in annual savings with no query performance regression.</li>
         <li>Designed platform services mapping complex customer and product hierarchies to order flows, enforcing consistent entitlement pricing globally.</li>
         <li>Spearheaded monolith-to-microservices modernization (Spring Boot + AWS ECS), dramatically improving fault isolation and independent deployability for a platform serving global enterprise customers.</li>
       </ul>
+      </div>
     </div>
 
     <div class="exp-role reveal">
@@ -474,12 +505,14 @@
         <div class="exp-company">Cisco</div>
         <div class="exp-time">Software Engineer 2 · 2020–2023</div>
       </div>
+      <div class="exp-content">
       <div class="exp-headline">Engineered a metadata-driven onboarding engine.</div>
       <ul class="exp-bullets">
         <li>Eliminated per-integration engineering effort by dynamically supporting new customer hierarchies without code changes, accelerating partner onboarding globally.</li>
         <li>Owned and delivered a role-based access control framework applied across 300+ internal engineering teams.</li>
         <li>Optimized graph and relational query performance through systematic index tuning, achieving 40% faster response times for critical entitlement services.</li>
       </ul>
+      </div>
     </div>
   </section>
 
