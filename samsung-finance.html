@@ -63,6 +63,11 @@
     z-index: 100;
     border-bottom: 1px solid var(--hairline);
     padding: 16px 0;
+    transition: padding 0.45s cubic-bezier(0.16, 1, 0.3, 1), background 0.45s ease;
+  }
+  nav.scrolled {
+    padding: 10px 0;
+    background: rgba(245, 245, 247, 0.72);
   }
 
   .nav-inner {
@@ -97,7 +102,7 @@
     color: var(--text-primary);
   }
 
-  .article-header { padding: 100px 0 60px; border-bottom: 1px solid var(--hairline); }
+  .article-header { padding: 100px 0 60px; }
   .category-label {
     display: inline-block; font-size: 14px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
@@ -183,11 +188,10 @@
 
   .failure-list { list-style: none; margin: 32px 0; }
   .failure-list li {
-    padding: 24px 0; border-bottom: 1px solid var(--hairline);
+    padding: 24px 0;
     align-items: start;
   }
-  .failure-list li:last-child { border-bottom: none; }
-  .fbadge {
+    .fbadge {
     font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; padding: 4px 10px; border-radius: 6px;
     display: inline-block; margin-bottom: 12px;
@@ -948,6 +952,16 @@
   document.querySelectorAll('h2, h3, p, ul, ol, .callout, .scale-grid, .decision, .code-block, .diagram-wrap, .latency-table, table, .failure-list li, .arch, .latency-budget').forEach(el => {
     el.classList.add('reveal');
     observer.observe(el);
+  });
+
+  // Nav scroll shrink
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
   });
 </script>
 </body>
