@@ -38,13 +38,29 @@
   /* Reveal Animation */
   .reveal {
     opacity: 0;
-    transform: translateY(16px);
-    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(24px) scale(0.985);
+    filter: blur(10px);
+    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1), filter 1s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .reveal.active {
     opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+
+  /* Staggered Children Animation */
+  .stagger > * {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .stagger.active > * {
+    opacity: 1;
     transform: translateY(0);
   }
+  .stagger.active > *:nth-child(1) { transition-delay: 0.05s; }
+  .stagger.active > *:nth-child(2) { transition-delay: 0.18s; }
+  .stagger.active > *:nth-child(3) { transition-delay: 0.30s; }
 
   /* Navigation */
   nav {
@@ -56,6 +72,11 @@
     z-index: 100;
     border-bottom: 1px solid var(--hairline);
     padding: 16px 0;
+    transition: padding 0.45s cubic-bezier(0.16, 1, 0.3, 1), background 0.45s ease;
+  }
+  nav.scrolled {
+    padding: 10px 0;
+    background: rgba(245, 245, 247, 0.72);
   }
 
   .nav-inner {
@@ -146,6 +167,8 @@
     text-align: center;
     border-radius: 32px;
     margin: 80px 0;
+    transform: translateY(var(--offset, 0px));
+    transition: transform 0.2s linear;
   }
 
   .signature-moment h2 {
@@ -228,7 +251,7 @@
     display: block;
     text-decoration: none;
     color: inherit;
-    transition: opacity 0.2s ease;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
     padding-bottom: 32px;
     border-bottom: 1px solid var(--hairline);
   }
@@ -239,6 +262,7 @@
   }
 
   .writing-item:hover {
+    transform: translateX(8px);
     opacity: 0.6;
   }
 
@@ -266,6 +290,11 @@
     grid-template-columns: 1fr 2fr;
     gap: 32px;
     align-items: baseline;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .project-item:hover {
+    transform: translateY(-4px) scale(1.01);
   }
 
   .project-name {
@@ -368,7 +397,7 @@
 <div class="container">
   
   <!-- Hero Section -->
-  <header class="hero reveal">
+  <header class="hero reveal stagger">
     <h1>Building financially correct systems for lending, payments, and real-time platforms.</h1>
     <div class="hero-secondary">
       Chief Engineer · Samsung Electronics<br>
@@ -556,6 +585,24 @@
   document.querySelectorAll('.reveal').forEach(el => {
     observer.observe(el);
   });
+
+  // Nav shrink on scroll
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    if(nav) {
+      nav.classList.toggle('scrolled', window.scrollY > 20);
+    }
+  });
+
+  // Signature Moment Scroll Parallax
+  const sig = document.querySelector('.signature-moment');
+  if (sig) {
+    window.addEventListener('scroll', () => {
+      const rect = sig.getBoundingClientRect();
+      const offset = rect.top * -0.03;
+      sig.style.setProperty('--offset', `${offset}px`);
+    });
+  }
 </script>
 
 </body>
