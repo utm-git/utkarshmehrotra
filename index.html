@@ -64,6 +64,24 @@
     --mid: 280ms;
   }
 
+  /* Dark Theme Custom Property Overrides */
+  body.dark-theme {
+    --canvas: #161512;          /* Warm near-black charcoal floor */
+    --canvas-soft: #201f1b;     /* Dark pane backgrounds */
+    --surface-card: #22211e;    /* Warm dark surface card */
+    --surface-strong: #2e2d29;
+    
+    --ink: #f7f7f4;             /* Inverted warm cream */
+    --body: #b8b6ad;            /* Inverted body text */
+    --body-strong: #f7f7f4;
+    --muted: #807e77;
+    --muted-soft: #63615b;
+    
+    --hairline: #2d2c28;        /* Subdued dark divider border */
+    --hairline-soft: #242320;
+    --hairline-strong: #403e39;
+  }
+
   html { 
     font-size: 16px; 
     scroll-behavior: smooth; 
@@ -268,6 +286,23 @@
   }
   .nav-links a.active::after {
     transform: scaleX(1);
+  }
+
+  .theme-toggle {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    margin-left: 4px;
+    transition: color var(--fast) var(--ease);
+  }
+  .theme-toggle:hover {
+    color: var(--ink);
   }
 
   /* Responsive Navigation for Mobile */
@@ -737,12 +772,17 @@
     background-color: var(--hairline-strong);
     border: 1px solid var(--hairline-strong);
     transition: background-color var(--fast) var(--ease),
-                border-color var(--fast) var(--ease);
+                border-color var(--fast) var(--ease),
+                box-shadow var(--fast) var(--ease);
   }
-  .timeline-item:first-of-type .timeline-node {
+  .timeline-item.active-node .timeline-node {
     background-color: var(--primary);
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(245, 78, 0, 0.12);
+    box-shadow: 0 0 0 3px rgba(245, 78, 0, 0.15);
+  }
+  .timeline-item:hover .timeline-node {
+    background-color: var(--primary);
+    border-color: var(--primary);
   }
 
   .timeline-meta {
@@ -1096,6 +1136,9 @@
       <a href="#projects">Projects</a>
       <a href="#skills">Expertise</a>
       <a href="#education">Education</a>
+      <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle theme" onclick="toggleTheme()">
+        <span class="icon-theme">☼</span>
+      </button>
     </div>
   </div>
 </nav>
@@ -1700,8 +1743,40 @@ public class NeptuneMigration {
     updateSimulatorUI();
   }
 
+  /* ─── THEME TOGGLE LOGIC ─── */
+  function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('theme-toggle-btn');
+    const icon = btn.querySelector('.icon-theme');
+    
+    body.classList.toggle('dark-theme');
+    
+    if (body.classList.contains('dark-theme')) {
+      icon.innerText = '☽';
+      localStorage.setItem('theme', 'dark');
+      addLogLine('System console environment toggled to Dark Theme.', 'warning');
+    } else {
+      icon.innerText = '☼';
+      localStorage.setItem('theme', 'light');
+      addLogLine('System console environment toggled to Light Theme.', 'success');
+    }
+  }
+
   // Initialize
   document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    const body = document.body;
+    const btn = document.getElementById('theme-toggle-btn');
+    const icon = btn.querySelector('.icon-theme');
+    
+    if (savedTheme === 'dark') {
+      body.classList.add('dark-theme');
+      icon.innerText = '☽';
+    } else {
+      body.classList.remove('dark-theme');
+      icon.innerText = '☼';
+    }
+
     // Set initial Samsung workspace tab active
     switchSimulatorTab('samsung');
     startSimulation();
@@ -1718,18 +1793,35 @@ public class NeptuneMigration {
   const navObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        navLinks.forEach(l => l.classList.remove('active'));
-        // Extract section ID
         let id = entry.target.getAttribute('id');
         if (!id && entry.target.tagName === 'HEADER') id = 'about'; // Hero defaults to about high-light
         
         const active = document.querySelector(`nav a[href="#${id}"]`);
-        if (active) active.classList.add('active');
+        if (active) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          active.classList.add('active');
+        }
       }
     });
   }, { threshold: 0.15, rootMargin: "-15% 0px -40% 0px" });
   
   sections.forEach(s => navObserver.observe(s));
+
+  // Experience timeline dot highlight scroll spy
+  const expObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.timeline-item').forEach(item => {
+          item.classList.remove('active-node');
+        });
+        entry.target.classList.add('active-node');
+      }
+    });
+  }, { threshold: 0.25, rootMargin: "-25% 0px -45% 0px" });
+
+  document.querySelectorAll('.timeline-item').forEach(item => {
+    expObserver.observe(item);
+  });
 
   const revealObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
