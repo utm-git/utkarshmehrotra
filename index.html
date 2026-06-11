@@ -1152,7 +1152,6 @@
       <a href="#experience">Experience</a>
       <a href="#writing">Writing</a>
       <a href="#projects">Projects</a>
-      <a href="#skills">Expertise</a>
       <a href="#education">Education</a>
       <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle theme" onclick="toggleTheme()">
         <span class="icon-theme">☼</span>
@@ -1456,28 +1455,7 @@
     </div>
   </section>
 
-  <!-- Skills / Expertise Section -->
-  <section id="skills" class="reveal">
-    <h2 class="section-label caption-uppercase">Expertise</h2>
-    <div class="skills-wrap">
-      <span class="skill-tag">Java</span>
-      <span class="skill-tag">SQL</span>
-      <span class="skill-tag">Apache Kafka</span>
-      <span class="skill-tag">Apache Flink</span>
-      <span class="skill-tag">Spark Streaming</span>
-      <span class="skill-tag">MongoDB</span>
-      <span class="skill-tag">Neo4j</span>
-      <span class="skill-tag">Amazon Neptune (Gremlin)</span>
-      <span class="skill-tag">Spring Boot</span>
-      <span class="skill-tag">Microservices</span>
-      <span class="skill-tag">AWS ECS</span>
-      <span class="skill-tag">Docker</span>
-      <span class="skill-tag">Jenkins CI/CD</span>
-      <span class="skill-tag">ELK Stack</span>
-      <span class="skill-tag">Prometheus</span>
-      <span class="skill-tag">Grafana</span>
-    </div>
-  </section>
+
 
   <!-- Education Section with Split Grid layout -->
   <section id="education" class="reveal">
@@ -1802,7 +1780,7 @@ public class NeptuneMigration {
 
   /* ─── SCROLL INTERSECTION OBSERVING ─── */
   // Setup reveal class attributes
-  const revealElementsSelector = '.hero, section > .section-label, .about-content, .timeline-item, .writing-card, .project-card, .skill-tag, .col-block';
+  const revealElementsSelector = '.hero, section > .section-label, .about-content, .timeline-item, .writing-card, .project-card, .col-block';
   document.querySelectorAll(revealElementsSelector).forEach(el => el.classList.add('reveal'));
 
   const sections = document.querySelectorAll('section[id], header.hero');
