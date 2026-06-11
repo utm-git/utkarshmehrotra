@@ -1197,7 +1197,13 @@
             <span class="icon-file">☕</span> FraudDetectionPipeline.java
           </button>
           <button class="sidebar-item" data-target="cisco" onclick="switchSimulatorTab('cisco')">
-            <span class="icon-file">☕</span> NeptuneMigration.java
+            <span class="icon-file">☕</span> EntitlementGraphResolver.java
+          </button>
+          <button class="sidebar-item" data-target="payment" onclick="switchSimulatorTab('payment')">
+            <span class="icon-file">☕</span> PaymentOrchestrator.java
+          </button>
+          <button class="sidebar-item" data-target="limiter" onclick="switchSimulatorTab('limiter')">
+            <span class="icon-file">☕</span> DistributedRateLimiter.java
           </button>
           
           <div class="sidebar-spacer"></div>
@@ -1553,18 +1559,57 @@ public class FraudDetectionPipeline {
         env.execute("WU-Fraud-Pipeline");
     }
 }`,
-    cisco: `// NeptuneMigration.java
-public class NeptuneMigration {
-    private final AmazonNeptuneClient neptune;
-    
-    // Migrated Neo4j to Neptune with zero downtime, saving $150K/year
-    public void queryEntitlements(String customerId, String productId) {
-        neptune.gremlinQuery()
-            .g().V(customerId)
-            .out("HAS_ENTITLEMENT")
+    cisco: `// EntitlementGraphResolver.java
+public class EntitlementGraphResolver {
+    private final GraphTraversalSource g;
+
+    // Resolves complex customer-product hierarchies for enterprise entitlements
+    public Map<String, Object> resolveEntitlements(String tenantId, String productId) {
+        return g.V(tenantId)
+            .repeat(__.out("CHILD_OF")).emit() // Recursive hierarchy traversal
+            .outE("HAS_ENTITLEMENT")
             .has("productId", productId)
-            .select("order_flow")
-            .executeAsync();
+            .has("status", "ACTIVE")
+            .project("entitlement", "pricing")
+                .by(__.valueMap("tier", "features"))
+                .by(__.inV().out("PRICING_RULE").valueMap("rate", "currency"))
+            .next();
+    }
+}`,
+    payment: `// PaymentOrchestrator.java
+public class PaymentOrchestrator {
+    private final PaymentGatewayClient gateway;
+    private final LedgerClient ledger;
+
+    // Orchestrates transactional payment flows with automatic compensations
+    public void orchestrateCharge(ChargeRequest req) {
+        Transaction tx = ledger.createPending(req);
+        try {
+            GatewayResult res = gateway.charge(req);
+            if (res.isSuccess()) {
+                ledger.commit(tx.getId(), res.getRefId());
+            } else {
+                ledger.fail(tx.getId(), res.getError());
+            }
+        } catch (GatewayTimeoutException e) {
+            // Initiate asynchronous polling / status check compensation
+            scheduler.scheduleCompensation(tx.getId(), req);
+        }
+    }
+}`,
+    limiter: `// DistributedRateLimiter.java
+public class DistributedRateLimiter {
+    private final RedisClient redis;
+
+    // Sliding window rate limiter preventing API resource starvation
+    public boolean isAllowed(String clientKey, int limit, Duration window) {
+        long current = Instant.now().toEpochMilli();
+        Transaction tx = redis.multi();
+        tx.zremrangeByScore(clientKey, 0, current - window.toMillis());
+        tx.zadd(clientKey, current, String.valueOf(current));
+        tx.zcard(clientKey);
+        List<Object> results = tx.exec();
+        return (Long) results.get(2) <= limit;
     }
 }`
   };
@@ -1576,35 +1621,45 @@ public class NeptuneMigration {
       text: 'Thinking',
       samsung: { prompt: 'Analyzing repayment records...', metricL: '<0.8s', metricR: '1,150/s', log: '[INFO] Initializing memory partition verification... Checking offsets.' },
       wu: { prompt: 'Evaluating stream thresholds...', metricL: '<0.6s', metricR: '1,150/s', log: '[INFO] Awaiting transaction batch trigger... Kafka cluster responsive.' },
-      cisco: { prompt: 'Formulating Gremlin query plan...', metricL: '12ms', metricR: 'N/A', log: '[INFO] Pre-compiling graph query steps. Analyzing node mapping rules.' }
+      cisco: { prompt: 'Compiling Gremlin traversal steps...', metricL: '12ms', metricR: '1,450/s', log: '[INFO] Analyzing traversal plan. Partitioning graph query parameters.' },
+      payment: { prompt: 'Initiating payment orchestration...', metricL: '120ms', metricR: '320/s', log: '[INFO] Generating idempotency key. Preparing transaction record.' },
+      limiter: { prompt: 'Evaluating sliding window rate limit...', metricL: '4ms', metricR: '8,500/s', log: '[INFO] Fetching active keys. Checking client request bucket.' }
     },
     {
       pill: 'read',
       text: 'Reading',
       samsung: { prompt: 'Fetching loan record state...', metricL: '<0.8s', metricR: '1,150/s', log: '[INFO] Consumer pull completed from samsung-repay-events partitions 1-4.' },
       wu: { prompt: 'Consuming transaction metadata...', metricL: '<0.6s', metricR: '1,280/s', log: '[INFO] Consumed 200 batch elements from transactional offset log.' },
-      cisco: { prompt: 'Traversing Neptune customer nodes...', metricL: '15ms', metricR: 'N/A', log: '[INFO] Traversing HAS_ENTITLEMENT edges for customer hierarchy. Depth 2.' }
+      cisco: { prompt: 'Traversing Neptune customer nodes...', metricL: '15ms', metricR: '1,450/s', log: '[INFO] Fetching adjacency lists... Traversing hierarchy tree. Depth 2.' },
+      payment: { prompt: 'Verifying local idempotency state...', metricL: '135ms', metricR: '320/s', log: '[INFO] Checking database for matching transaction keys.' },
+      limiter: { prompt: 'Pruning expired elements from Redis...', metricL: '5ms', metricR: '8,500/s', log: '[INFO] Running ZREMRANGEBYSCORE on active sliding window sorted sets.' }
     },
     {
       pill: 'grep',
       text: 'Grepping',
       samsung: { prompt: 'Deduplicating transaction keys...', metricL: '<0.8s', metricR: '1,150/s', log: '[OK] Idempotency verification check. Verified key: fraud:18032:repay.' },
       wu: { prompt: 'Matching user behavioral signals...', metricL: '<0.6s', metricR: '1,320/s', log: '[INFO] Correlating authentication logs against session anomalies.' },
-      cisco: { prompt: 'Extracting entitlement-based pricing...', metricL: '18ms', metricR: 'N/A', log: '[INFO] Entitlement pricing matched. Extracting global order flows.' }
+      cisco: { prompt: 'Extracting entitlement pricing...', metricL: '18ms', metricR: '1,450/s', log: '[OK] Entitlement match found at hierarchy level 3. Resolving pricing rules.' },
+      payment: { prompt: 'Calling external payment gateway...', metricL: '250ms', metricR: '320/s', log: '[INFO] Dispatched POST request to secure payment processor. Awaiting response.' },
+      limiter: { prompt: 'Counting current window cardinality...', metricL: '4ms', metricR: '8,500/s', log: '[INFO] Adding timestamp to sorted set. Executing ZCARD transaction.' }
     },
     {
       pill: 'edit',
       text: 'Editing',
       samsung: { prompt: 'Updating loan state machine...', metricL: '<0.8s', metricR: '1,150/s', log: '[WARN] Attempting atomic commit. Writing active transaction to state store...' },
       wu: { prompt: 'Calculating risk scoring function...', metricL: '<0.6s', metricR: '1,220/s', log: '[INFO] Scoring stream output. ML model returning probability index 0.04.' },
-      cisco: { prompt: 'Optimizing Neptune indexing paths...', metricL: '14ms', metricR: 'N/A', log: '[OK] Neptune index optimized. Graph query successfully completed.' }
+      cisco: { prompt: 'Materializing pricing projections...', metricL: '14ms', metricR: '1,450/s', log: '[INFO] Materializing entitlement properties. Formatting pricing object.' },
+      payment: { prompt: 'Committing transaction to ledger...', metricL: '145ms', metricR: '320/s', log: '[INFO] Gateway charge successful. Updating ledger record state to COMMITTED.' },
+      limiter: { prompt: 'Evaluating throttle thresholds...', metricL: '3ms', metricR: '8,500/s', log: '[INFO] Pipeline results evaluated. Checking limit threshold boundaries.' }
     },
     {
       pill: 'done',
       text: 'Done',
       samsung: { prompt: 'Exactly-once reconciliation complete!', metricL: '<0.8s', metricR: '1,150/s', log: '[SUCCESS] Reconciliation done. Reduced settlement latency T+2 to real-time.' },
       wu: { prompt: 'Fraud risk evaluated under 1s!', metricL: '<0.6s', metricR: '1,150/s', log: '[SUCCESS] Emitted pre-settlement block action. Signal dispatched. Exposure window: 0ms.' },
-      cisco: { prompt: 'Migration savings active ($150K/yr).', metricL: '11ms', metricR: 'N/A', log: '[SUCCESS] Graph modernizations completed. Total pipeline savings running at P99.' }
+      cisco: { prompt: 'Hierarchy pricing resolved!', metricL: '11ms', metricR: '1,450/s', log: '[SUCCESS] Traversed 18 nodes. Pricing rules matched. Traversal complete.' },
+      payment: { prompt: 'Orchestration step complete!', metricL: '120ms', metricR: '320/s', log: '[SUCCESS] Payment settled successfully. Compensation scheduler cleared.' },
+      limiter: { prompt: 'Request allowed!', metricL: '3ms', metricR: '8,500/s', log: '[SUCCESS] Request count within limits. Connection allowed. Exiting filter.' }
     }
   ];
 
@@ -1620,7 +1675,7 @@ public class NeptuneMigration {
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/(\/\/.*)/g, '<span class="syntax-comment">$1</span>')
       .replace(/\b(public|class|private|final|void|return|new|implements)\b/g, '<span class="syntax-kw">$1</span>')
-      .replace(/\b(String|Settlement|LoanState|Repayment|DataStream|Event|AmazonNeptuneClient|KafkaStreamConsumer|FlinkStateStore|KafkaStreamSource|FlinkStreamExecutionEnv)\b/g, '<span class="syntax-type">$1</span>')
+      .replace(/\b(String|Settlement|LoanState|Repayment|DataStream|Event|AmazonNeptuneClient|KafkaStreamConsumer|FlinkStateStore|KafkaStreamSource|FlinkStreamExecutionEnv|Map|ChargeRequest|Transaction|GatewayResult|GatewayTimeoutException|Duration|RedisClient|GraphTraversalSource)\b/g, '<span class="syntax-type">$1</span>')
       .replace(/(".*?")/g, '<span class="syntax-str">$1</span>')
       .replace(/\.([a-zA-Z0-9_]+)(?=\()/g, '.<span class="syntax-method">$1</span>');
   }
@@ -1719,13 +1774,17 @@ public class NeptuneMigration {
     const filenameMap = {
       samsung: 'ReconciliationEngine.java',
       wu: 'FraudDetectionPipeline.java',
-      cisco: 'NeptuneMigration.java'
+      cisco: 'EntitlementGraphResolver.java',
+      payment: 'PaymentOrchestrator.java',
+      limiter: 'DistributedRateLimiter.java'
     };
     
     const indicatorMap = {
       samsung: 'FLINK TASKMANAGER',
       wu: 'SPARK CORE ENGINE',
-      cisco: 'NEPTUNE GRAPH CLIENT'
+      cisco: 'NEPTUNE GRAPH CLIENT',
+      payment: 'LEDGER TRANSACTION ROUTER',
+      limiter: 'REDIS DISTRIBUTED FILTER'
     };
     
     document.getElementById('tab-title').innerText = filenameMap[tabKey];
